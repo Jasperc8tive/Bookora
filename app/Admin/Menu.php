@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Bookora\Admin;
 
+use Bookora\Security\Capabilities;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -27,7 +29,7 @@ final class Menu {
 	/**
 	 * Capability required to see the menu.
 	 */
-	public const CAPABILITY = 'manage_options';
+	public const CAPABILITY = Capabilities::MANAGE_SETTINGS;
 
 	/**
 	 * Dashboard page renderer.

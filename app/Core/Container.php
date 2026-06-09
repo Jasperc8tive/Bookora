@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Bookora\Core;
 
 use Closure;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -188,7 +189,18 @@ class Container implements ContainerInterface {
 
 		$type = $parameter->getType();
 		if ( $type instanceof ReflectionNamedType && ! $type->isBuiltin() ) {
-			return $this->make( $type->getName() );
+			try {
+				return $this->make( $type->getName() );
+			} catch ( ContainerExceptionInterface $e ) {
+				// Fall back to a default/null for optional (e.g. nullable \wpdb) deps.
+				if ( $parameter->isDefaultValueAvailable() ) {
+					return $parameter->getDefaultValue();
+				}
+				if ( $parameter->allowsNull() ) {
+					return null;
+				}
+				throw $e;
+			}
 		}
 
 		if ( $parameter->isDefaultValueAvailable() ) {

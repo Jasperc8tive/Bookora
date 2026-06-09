@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Bookora\Tests\Rest;
 
 use Bookora\Database\MigrationRunner;
+use Bookora\Security\Roles;
 use WP_REST_Request;
 use WP_UnitTestCase;
 
@@ -26,6 +27,9 @@ class SystemControllerTest extends WP_UnitTestCase {
 
 		$this->runner = new MigrationRunner();
 		$this->runner->migrate();
+
+		// Grant the administrator the bookora_manage_settings capability.
+		( new Roles() )->install();
 
 		// Ensure the REST routes are registered against the test server.
 		do_action( 'rest_api_init' );

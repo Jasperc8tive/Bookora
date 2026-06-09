@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Bookora\Core;
 
 use Bookora\Database\Schema;
+use Bookora\Security\Roles;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -49,6 +50,8 @@ final class Uninstaller {
 		'bookora_db_version',
 		'bookora_version',
 		'bookora_installed_at',
+		'bookora_caps_version',
+		'bookora_audit_secret',
 	);
 
 	/**
@@ -78,5 +81,8 @@ final class Uninstaller {
 		foreach ( self::OPTIONS as $option ) {
 			delete_option( $option );
 		}
+
+		// Remove custom roles and revoke administrator capabilities.
+		( new Roles() )->remove();
 	}
 }

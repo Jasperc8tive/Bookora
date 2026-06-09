@@ -13,6 +13,7 @@ use Bookora\Admin\AdminServiceProvider;
 use Bookora\API\ApiServiceProvider;
 use Bookora\Core\Contracts\ServiceProvider;
 use Bookora\Database\DatabaseServiceProvider;
+use Bookora\Security\SecurityServiceProvider;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,6 +51,7 @@ final class Plugin {
 	 */
 	private array $providers = array(
 		DatabaseServiceProvider::class,
+		SecurityServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,
 	);

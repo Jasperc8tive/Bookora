@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Bookora\Core;
 
 use Bookora\Database\MigrationRunner;
+use Bookora\Security\Roles;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -30,6 +31,9 @@ final class Activator {
 
 		// Seed default settings without clobbering any existing values.
 		( new Settings() )->seed_defaults();
+
+		// Install custom roles + capabilities (Manager / Staff / Customer + admin grants).
+		( new Roles() )->install();
 
 		// Record first-install metadata.
 		if ( false === get_option( 'bookora_installed_at', false ) ) {

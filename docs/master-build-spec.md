@@ -15,10 +15,10 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 1 — Project Foundation** |
+| Current stage | **STAGE 2 — Authorization + Security Framework** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
-| Last updated | 2026-06-08 |
+| Last updated | 2026-06-09 |
 
 ---
 
@@ -42,6 +42,8 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-012 | **18-stage roadmap** (Project Foundation → Production Release) is authoritative, replacing the earlier proposed 1–8. | Detailed engineering mandate supersedes the placeholder roadmap. | 2026-06-08 | 1 |
 | D-013 | Admin build = **React 18 + TypeScript + Vite + Tailwind** (Tailwind `bkra-` prefix, scoped to `#bookora-admin-root`) | Modern DX; supersedes `@wordpress/scripts`. | 2026-06-08 | 1 |
 | D-014 | **PHP 8.2+ / WP 6.8+**, DDD `app/` layout, lightweight PSR-11 container, service-provider pattern, migration system | Adopt Stage 1 mandate stack; minimal vendor footprint for a commercial plugin. | 2026-06-08 | 1 |
+| D-015 | Authorization is **capability-based** (`bookora_*` caps) with a 4-tier role model (Admin/Manager/Staff/Customer); no `manage_options` shortcuts | Least privilege; clean basis for agency/white-label scoping later. | 2026-06-09 | 2 |
+| D-016 | Audit log is **append-only + SHA-256 hash-chained**; IP/UA stored HMAC-hashed only | Tamper-evidence + NDPR/GDPR-friendly (no raw PII in logs). | 2026-06-09 | 2 |
 
 ---
 
@@ -53,8 +55,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 |---|---|---|---|
 | **-1** | Discovery, Requirements & Technical Planning | **COMPLETE — Audited** | ✅ APPROVED 2026-06-05 |
 | **0** | Market Research & Product Strategy | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
-| **1** | Project Foundation | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 2 | Authorization + Security Framework | Not started | — |
+| **1** | Project Foundation | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
+| **2** | Authorization + Security Framework | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 3 | Services Module | Not started | — |
 | 4 | Staff Management Module | Not started | — |
 | 5 | Customer Management (CRM) | Not started | — |
@@ -74,6 +76,19 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 2 Artifact Index
+
+Code in [`app/Security/`](../app/Security/) + [`app/Database/Repository/AuditLogRepository.php`](../app/Database/Repository/AuditLogRepository.php). Stage docs in [`docs/stage-2-security/`](stage-2-security/):
+
+| Artifact | File |
+|---|---|
+| Stage 2 Audit & Plugin Audit Report (incl. permission matrix) | [stage-audit.md](stage-2-security/stage-audit.md) |
+| Capabilities + Permission Matrix | [Capabilities.php](../app/Security/Capabilities.php) · [PermissionMatrix.php](../app/Security/PermissionMatrix.php) |
+| Roles installer | [Roles.php](../app/Security/Roles.php) |
+| Nonce + Guard | [Nonce.php](../app/Security/Nonce.php) · [Guard.php](../app/Security/Guard.php) |
+| Rate limiter | [RateLimiter.php](../app/Security/RateLimiter.php) |
+| Activity logger (hash-chained) | [ActivityLogger.php](../app/Security/ActivityLogger.php) |
 
 ### Stage 1 Artifact Index
 
@@ -158,4 +173,5 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 |---|---|
 | 2026-06-05 | Document created. Stage -1 built and audited. Decisions D-001…D-010 recorded. Awaiting approval to enter Stage 0. |
 | 2026-06-05 | Stage -1 **APPROVED**. Stage 0 (Market Research & Product Strategy) built and audited — 10 artifacts incl. 6 competitor profiles, 8 personas, 100/50/25 content plan, full GTM. Risks R-06, R-07 added. Awaiting approval to enter Stage 1 (first code stage). |
-| 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2 (Authorization + Security Framework). |
+| 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2. Pushed to GitHub (`origin/main`). |
+| 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3 (Services Module). |

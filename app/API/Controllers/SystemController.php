@@ -12,6 +12,7 @@ namespace Bookora\API\Controllers;
 use Bookora\API\AbstractController;
 use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
+use Bookora\Security\Capabilities;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -79,7 +80,7 @@ final class SystemController extends AbstractController {
 				array(
 					'methods'             => 'GET',
 					'callback'            => array( $this, 'health' ),
-					'permission_callback' => $this->require_capability( 'manage_options' ),
+					'permission_callback' => $this->require_capability( Capabilities::MANAGE_SETTINGS ),
 				),
 			)
 		);
