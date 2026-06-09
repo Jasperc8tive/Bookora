@@ -1,0 +1,161 @@
+# Bookora — Master Build Spec (Living Document)
+
+> **Single source of truth.** This document is updated at the end of every completed stage.
+> It indexes all stage artifacts, records binding decisions, tracks the stage gate, and holds the roadmap.
+
+---
+
+## 0. Snapshot
+
+| Field | Value |
+|---|---|
+| Product name | **Bookora** |
+| Tagline (working) | *The fastest WordPress booking platform — Africa-first, globally ready.* |
+| Category | Premium WordPress appointment-booking platform (plugin + SaaS-grade services) |
+| Primary market | **Africa-first (Nigeria lead) → global** |
+| Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
+| Repo | `c:\Bookora` |
+| Current stage | **STAGE 1 — Project Foundation** |
+| Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
+| Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
+| Last updated | 2026-06-08 |
+
+---
+
+## 1. Binding Decisions Log
+
+Decisions here are **load-bearing**. Changing one requires a changelog entry and a re-audit of affected stages.
+
+| # | Decision | Rationale | Date | Stage |
+|---|---|---|---|---|
+| D-001 | Product name is **Bookora** (not "Bookly Pro") | "Bookly" is an existing competitor — direct trademark/SEO collision. | 2026-06-05 | -1 |
+| D-002 | **Africa-first** GTM, Nigeria lead, then global | Paystack/Flutterwave/WhatsApp-native mandate signals an underserved, payment-rail-specific market. | 2026-06-05 | -1 |
+| D-003 | Distribution = **WordPress plugin** (free core on wp.org) + paid add-on/licensed Pro | Matches Bookly/Amelia/LatePoint model; wp.org free tier is the #1 acquisition channel. | 2026-06-05 | -1 |
+| D-004 | Admin UI = **React + TypeScript** SPA mounted in wp-admin; front-end booking = lightweight TS widget (no heavy framework on public pages) | Modern admin DX + fast public LCP for low-bandwidth markets. | 2026-06-05 | -1 |
+| D-005 | Backend = **PHP 8.1+**, WordPress REST API namespace `bookora/v1`, custom service layer (not raw WP hooks spaghetti) | Testability, PSR-12, future SaaS extraction. | 2026-06-05 | -1 |
+| D-006 | **Custom tables** (not CPT/postmeta) for bookings/appointments | Postmeta does not scale for high-volume time-series booking data. | 2026-06-05 | -1 |
+| D-007 | Payments: **Paystack + Flutterwave native**, Stripe/PayPal for global | Differentiator vs all listed competitors in African market. | 2026-06-05 | -1 |
+| D-008 | Notifications: **WhatsApp-native** (Cloud API), Email, SMS | WhatsApp is the dominant channel in target market. | 2026-06-05 | -1 |
+| D-009 | **Elementor-first** page-builder integration (plus Gutenberg blocks, shortcodes) | Elementor dominates the African/SMB WordPress segment. | 2026-06-05 | -1 |
+| D-010 | Licensing/feature-gating via **capability flags resolved from a license entitlement service**, not scattered `if` checks | Clean free/pro separation, white-label readiness. | 2026-06-05 | -1 |
+| D-011 | DB table prefix = **`{$wpdb->prefix}bkra_`** → `wp_bkra_*` (supersedes the `af_*` naming in the Stage 1 mandate) | Brand-aligned + collision-safe on shared hosting; `af_` is generic. | 2026-06-08 | 1 |
+| D-012 | **18-stage roadmap** (Project Foundation → Production Release) is authoritative, replacing the earlier proposed 1–8. | Detailed engineering mandate supersedes the placeholder roadmap. | 2026-06-08 | 1 |
+| D-013 | Admin build = **React 18 + TypeScript + Vite + Tailwind** (Tailwind `bkra-` prefix, scoped to `#bookora-admin-root`) | Modern DX; supersedes `@wordpress/scripts`. | 2026-06-08 | 1 |
+| D-014 | **PHP 8.2+ / WP 6.8+**, DDD `app/` layout, lightweight PSR-11 container, service-provider pattern, migration system | Adopt Stage 1 mandate stack; minimal vendor footprint for a commercial plugin. | 2026-06-08 | 1 |
+
+---
+
+## 2. Stage Gate Tracker
+
+Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No stage proceeds without `APPROVED FOR NEXT STAGE`.
+
+| Stage | Name | Status | Approval |
+|---|---|---|---|
+| **-1** | Discovery, Requirements & Technical Planning | **COMPLETE — Audited** | ✅ APPROVED 2026-06-05 |
+| **0** | Market Research & Product Strategy | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
+| **1** | Project Foundation | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
+| 2 | Authorization + Security Framework | Not started | — |
+| 3 | Services Module | Not started | — |
+| 4 | Staff Management Module | Not started | — |
+| 5 | Customer Management (CRM) | Not started | — |
+| 6 | Booking Engine | Not started | — |
+| 7 | Booking Wizard (front-end) | Not started | — |
+| 8 | Calendar System (admin) | Not started | — |
+| 9 | Payments (Stripe, Paystack, Flutterwave) | Not started | — |
+| 10 | Notifications (Email, SMS, WhatsApp, Push) | Not started | — |
+| 11 | Google Calendar (two-way) | Not started | — |
+| 12 | Outlook Calendar (MS Graph) | Not started | — |
+| 13 | Elementor Integration | Not started | — |
+| 14 | Customer Portal | Not started | — |
+| 15 | Reporting & Analytics | Not started | — |
+| 16 | Advanced Features (waitlist, coupons, memberships, resources) | Not started | — |
+| 17 | AI Scheduling | Not started | — |
+| 18 | Commercial Hardening (licensing, updater, white-label) | Not started | — |
+| Final | Production Release Audit | Not started | — |
+
+> The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 1 Artifact Index
+
+Code lives at the repo root (`bookora.php`, `app/`, `assets/`, `tests/`). Stage docs in [`docs/stage-1-foundation/`](stage-1-foundation/):
+
+| Artifact | File |
+|---|---|
+| Stage 1 Audit & Plugin Audit Report | [stage-audit.md](stage-1-foundation/stage-audit.md) |
+| Plugin bootstrap | [bookora.php](../bookora.php) |
+| Core (container, lifecycle, settings, logger) | [app/Core/](../app/Core/) |
+| Database (migrations, schema, repository) | [app/Database/](../app/Database/) |
+| REST API (`bookora/v1`) | [app/API/](../app/API/) |
+| Admin shell | [app/Admin/](../app/Admin/) |
+| Admin SPA source | [assets/src/admin/](../assets/src/admin/) |
+
+### Stage 0 Artifact Index
+
+All Stage 0 deliverables live in [`docs/stage-0-market-research/`](stage-0-market-research/):
+
+| Artifact | File |
+|---|---|
+| Competitor Research (6 competitors) | [competitor-research.md](stage-0-market-research/competitor-research.md) |
+| Market Gap Analysis | [market-gap-analysis.md](stage-0-market-research/market-gap-analysis.md) |
+| Differentiation & Positioning | [differentiation-strategy.md](stage-0-market-research/differentiation-strategy.md) |
+| Customer Personas (8) | [personas.md](stage-0-market-research/personas.md) |
+| Pricing Strategy | [pricing-strategy.md](stage-0-market-research/pricing-strategy.md) |
+| SEO Strategy | [seo-strategy.md](stage-0-market-research/seo-strategy.md) |
+| Content Marketing Plan (100/50/25) | [content-marketing-plan.md](stage-0-market-research/content-marketing-plan.md) |
+| Affiliate & Partner Strategy | [affiliate-strategy.md](stage-0-market-research/affiliate-strategy.md) |
+| Go-To-Market (30/90/6mo/12mo) | [go-to-market.md](stage-0-market-research/go-to-market.md) |
+| Stage 0 Audit | [stage-audit.md](stage-0-market-research/stage-audit.md) |
+
+---
+
+## 3. Stage -1 Artifact Index
+
+All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discovery/):
+
+| Artifact | File | Covers |
+|---|---|---|
+| Product Requirements Document | [prd.md](stage--1-discovery/prd.md) | Vision, mission, objectives, metrics, value prop, USP, positioning |
+| User Types & Workflows | [user-types-workflows.md](stage--1-discovery/user-types-workflows.md) | Admin, Business Owner, Staff, Customer, Agency, Affiliate workflows |
+| User Stories (100+) | [user-stories.md](stage--1-discovery/user-stories.md) | 120 stories across all roles |
+| Use Cases | [use-cases.md](stage--1-discovery/use-cases.md) | Booking, reschedule, cancel, payments, notifications, sync, scheduling, reporting, affiliate, agency |
+| System Architecture | [system-architecture.md](stage--1-discovery/system-architecture.md) | High-level, component, service, event, integration |
+| Database Design | [database-design.md](stage--1-discovery/database-design.md) | ERD, relationships, indexing, retention, archiving, scalability |
+| API Design | [api-design.md](stage--1-discovery/api-design.md) | REST endpoints, auth, authz, rate limiting, versioning |
+| Security Design | [security-design.md](stage--1-discovery/security-design.md) | Threat model, OWASP map, security arch, data protection, GDPR/NDPR, audit logging |
+| Monetization Architecture | [monetization.md](stage--1-discovery/monetization.md) | Tiers, feature gating, free/pro/agency/white-label separation, upgrade paths |
+| Stage -1 Audit | [stage-audit.md](stage--1-discovery/stage-audit.md) | 7 audits + Stage Completion Report |
+
+---
+
+## 4. Architecture Summary (authoritative pointers)
+
+- **Stack:** PHP 8.1+ / WordPress 6.x / MySQL 8 (MariaDB 10.6+) / React 18 + TS (admin) / vanilla-TS widget (front).
+- **API:** WP REST `wp-json/bookora/v1/*`, versioned, nonce+JWT auth, capability-based authz, token-bucket rate limiting.
+- **Data:** Custom tables prefixed `wp_bkra_*`, soft-delete + archive strategy, tenant-scoping column for agency/multi-location.
+- **Services:** `BookingService`, `AvailabilityEngine`, `PaymentGateway` (driver pattern), `NotificationDispatcher` (channel drivers), `LicenseService`, `CalendarSyncService`, `AffiliateLedger`.
+- **Events:** Internal event bus (`bookora_event` dispatcher) → async queue (Action Scheduler) for notifications, sync, webhooks.
+- Full detail in the Stage -1 artifacts above.
+
+---
+
+## 5. Open Questions / Risks Carried Forward
+
+| ID | Item | Owner | Target stage |
+|---|---|---|---|
+| R-01 | Confirm hosting assumption (shared cPanel vs managed) for the African SMB segment — affects queue/cron strategy. | DevOps | 0 |
+| R-02 | WhatsApp Cloud API onboarding friction (Meta Business verification) for SMBs — may need a managed Bookora BSP relay. | Architect/PM | 0 |
+| R-03 | Licensing server: self-hosted vs Freemius/Lemon Squeezy/Paddle as merchant-of-record. | Founder/Growth | 0 |
+| R-04 | Data residency expectations for NDPR (Nigeria) and GDPR (EU) when offering hosted relays. | Security | 0 |
+| R-05 | Free-tier abuse / cron reliability on cheap shared hosting. | DevOps/Eng | 1 |
+| R-06 | Live-verify competitor pricing/features + confirm what QuickCal actually is before publishing comparison/pricing pages. | Growth | 0→pre-launch |
+| R-07 | "Africa-only" perception capping global TAM — mitigated by dual narrative + global-competitive pillars. | Growth/Founder | ongoing |
+
+---
+
+## 6. Changelog
+
+| Date | Change |
+|---|---|
+| 2026-06-05 | Document created. Stage -1 built and audited. Decisions D-001…D-010 recorded. Awaiting approval to enter Stage 0. |
+| 2026-06-05 | Stage -1 **APPROVED**. Stage 0 (Market Research & Product Strategy) built and audited — 10 artifacts incl. 6 competitor profiles, 8 personas, 100/50/25 content plan, full GTM. Risks R-06, R-07 added. Awaiting approval to enter Stage 1 (first code stage). |
+| 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2 (Authorization + Security Framework). |

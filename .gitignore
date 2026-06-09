@@ -1,0 +1,25 @@
+# Dependencies
+/vendor/
+/node_modules/
+composer.phar
+composer-setup.php
+
+# Build output
+/assets/build/
+
+# Tooling caches
+.phpunit.result.cache
+/.phpcs.cache
+/coverage/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local Claude Code harness state (plans, memory) — not for the public repo
+.claude/
+
+# WP local test scaffolding
+/tmp/
