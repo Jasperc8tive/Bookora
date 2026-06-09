@@ -89,5 +89,14 @@ final class Menu {
 			self::SLUG . '-services',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Staff', 'bookora' ),
+			__( 'Staff', 'bookora' ),
+			Capabilities::MANAGE_STAFF,
+			self::SLUG . '-staff',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

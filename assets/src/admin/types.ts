@@ -37,6 +37,38 @@ export interface Service {
   status: string;
 }
 
+export interface StaffMember {
+  id: number;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  color: string | null;
+  status: string;
+  skills?: string[];
+  service_ids?: number[];
+}
+
+export interface AvailabilityTimeEntry {
+  weekday: number;
+  start_time: string;
+  end_time: string;
+}
+
+export interface AvailabilityDateEntry {
+  start_date: string;
+  end_date: string;
+  note: string | null;
+}
+
+export interface Availability {
+  working_hours: AvailabilityTimeEntry[];
+  breaks: AvailabilityTimeEntry[];
+  time_off: AvailabilityDateEntry[];
+  holidays: AvailabilityDateEntry[];
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

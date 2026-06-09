@@ -15,6 +15,7 @@ use Bookora\Core\Contracts\ServiceProvider;
 use Bookora\Database\DatabaseServiceProvider;
 use Bookora\Security\SecurityServiceProvider;
 use Bookora\Services\ServicesServiceProvider;
+use Bookora\Staff\StaffServiceProvider;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -54,6 +55,7 @@ final class Plugin {
 		DatabaseServiceProvider::class,
 		SecurityServiceProvider::class,
 		ServicesServiceProvider::class,
+		StaffServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,
 	);

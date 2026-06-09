@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 3 — Services Module** |
+| Current stage | **STAGE 4 — Staff Management Module** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-09 |
@@ -57,8 +57,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **0** | Market Research & Product Strategy | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
 | **1** | Project Foundation | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
 | **2** | Authorization + Security Framework | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
-| **3** | Services Module | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 4 | Staff Management Module | Not started | — |
+| **3** | Services Module | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
+| **4** | Staff Management Module | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 5 | Customer Management (CRM) | Not started | — |
 | 6 | Booking Engine | Not started | — |
 | 7 | Booking Wizard (front-end) | Not started | — |
@@ -76,6 +76,18 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 4 Artifact Index
+
+Code in [`app/Staff/`](../app/Staff/), REST in [`app/API/Controllers/`](../app/API/Controllers/), UI in [`assets/src/admin/components/staff/`](../assets/src/admin/components/staff/). Migration 0003 adds `wp_bkra_staff_services` + `staff.skills`. Stage docs in [`docs/stage-4-staff/`](stage-4-staff/):
+
+| Artifact | File |
+|---|---|
+| Stage 4 Audit & Plugin Audit Report | [stage-audit.md](stage-4-staff/stage-audit.md) |
+| Repositories | [StaffRepository.php](../app/Staff/StaffRepository.php) · [AvailabilityRepository.php](../app/Staff/AvailabilityRepository.php) · [StaffServiceRepository.php](../app/Staff/StaffServiceRepository.php) |
+| Managers | [StaffManager.php](../app/Staff/StaffManager.php) · [AvailabilityManager.php](../app/Staff/AvailabilityManager.php) |
+| REST controllers | [StaffController.php](../app/API/Controllers/StaffController.php) · [StaffAvailabilityController.php](../app/API/Controllers/StaffAvailabilityController.php) |
+| Admin UI | [StaffPage.tsx](../assets/src/admin/components/staff/StaffPage.tsx) · [StaffForm.tsx](../assets/src/admin/components/staff/StaffForm.tsx) |
 
 ### Stage 3 Artifact Index
 
@@ -187,4 +199,5 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-05 | Stage -1 **APPROVED**. Stage 0 (Market Research & Product Strategy) built and audited — 10 artifacts incl. 6 competitor profiles, 8 personas, 100/50/25 content plan, full GTM. Risks R-06, R-07 added. Awaiting approval to enter Stage 1 (first code stage). |
 | 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2. Pushed to GitHub (`origin/main`). |
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
-| 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4 (Staff Management). |
+| 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
+| 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5 (Customer CRM). |

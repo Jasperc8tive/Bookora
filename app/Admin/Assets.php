@@ -99,6 +99,10 @@ final class Assets {
 	private function current_screen(): string {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		return Menu::SLUG . '-services' === $page ? 'services' : 'dashboard';
+		return match ( $page ) {
+			Menu::SLUG . '-services' => 'services',
+			Menu::SLUG . '-staff'    => 'staff',
+			default                  => 'dashboard',
+		};
 	}
 }

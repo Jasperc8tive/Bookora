@@ -5,9 +5,24 @@ import { useState } from 'react';
 import { Nav, type Screen } from './components/Nav';
 import { SystemStatus } from './components/SystemStatus';
 import { ServicesPage } from './components/services/ServicesPage';
+import { StaffPage } from './components/staff/StaffPage';
 
 function initialScreen(): Screen {
-  return window.BookoraAdmin?.screen === 'services' ? 'services' : 'dashboard';
+  const screen = window.BookoraAdmin?.screen;
+  if (screen === 'services' || screen === 'staff') {
+    return screen;
+  }
+  return 'dashboard';
+}
+
+function Screen({ screen }: { screen: Screen }) {
+  if (screen === 'services') {
+    return <ServicesPage />;
+  }
+  if (screen === 'staff') {
+    return <StaffPage />;
+  }
+  return <SystemStatus />;
 }
 
 export function App() {
@@ -26,7 +41,7 @@ export function App() {
       <Nav active={screen} onChange={setScreen} />
 
       <div className="bkra-rounded-lg bkra-border bkra-border-gray-200 bkra-bg-white bkra-p-6 bkra-shadow-sm">
-        {screen === 'dashboard' ? <SystemStatus /> : <ServicesPage />}
+        <Screen screen={screen} />
       </div>
     </div>
   );
