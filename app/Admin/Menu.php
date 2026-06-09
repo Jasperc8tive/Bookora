@@ -80,5 +80,14 @@ final class Menu {
 			self::SLUG,
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Services', 'bookora' ),
+			__( 'Services', 'bookora' ),
+			Capabilities::MANAGE_SERVICES,
+			self::SLUG . '-services',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

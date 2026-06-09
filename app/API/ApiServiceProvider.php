@@ -36,14 +36,7 @@ final class ApiServiceProvider implements ServiceProvider {
 		$controllers = $this->controllers;
 		$container->singleton(
 			Router::class,
-			static function ( Container $c ) use ( $controllers ): Router {
-				$instances = array_map(
-					static fn ( string $class ): AbstractController => $c->get( $class ),
-					$controllers
-				);
-
-				return new Router( $instances );
-			}
+			static fn ( Container $c ): Router => new Router( $c, $controllers )
 		);
 	}
 

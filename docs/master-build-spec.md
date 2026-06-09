@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 2 — Authorization + Security Framework** |
+| Current stage | **STAGE 3 — Services Module** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-09 |
@@ -56,8 +56,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **-1** | Discovery, Requirements & Technical Planning | **COMPLETE — Audited** | ✅ APPROVED 2026-06-05 |
 | **0** | Market Research & Product Strategy | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
 | **1** | Project Foundation | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
-| **2** | Authorization + Security Framework | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 3 | Services Module | Not started | — |
+| **2** | Authorization + Security Framework | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
+| **3** | Services Module | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 4 | Staff Management Module | Not started | — |
 | 5 | Customer Management (CRM) | Not started | — |
 | 6 | Booking Engine | Not started | — |
@@ -76,6 +76,18 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 3 Artifact Index
+
+Code in [`app/Services/`](../app/Services/), REST in [`app/API/Controllers/`](../app/API/Controllers/), UI in [`assets/src/admin/components/services/`](../assets/src/admin/components/services/). Migration 0002 adds `wp_bkra_service_categories`. Stage docs in [`docs/stage-3-services/`](stage-3-services/):
+
+| Artifact | File |
+|---|---|
+| Stage 3 Audit & Plugin Audit Report | [stage-audit.md](stage-3-services/stage-audit.md) |
+| Service / Category repositories | [ServiceRepository.php](../app/Services/ServiceRepository.php) · [CategoryRepository.php](../app/Services/CategoryRepository.php) |
+| Service / Category managers | [ServiceManager.php](../app/Services/ServiceManager.php) · [CategoryManager.php](../app/Services/CategoryManager.php) |
+| REST controllers | [ServicesController.php](../app/API/Controllers/ServicesController.php) · [ServiceCategoriesController.php](../app/API/Controllers/ServiceCategoriesController.php) |
+| Admin UI | [ServicesPage.tsx](../assets/src/admin/components/services/ServicesPage.tsx) · [ServiceForm.tsx](../assets/src/admin/components/services/ServiceForm.tsx) |
 
 ### Stage 2 Artifact Index
 
@@ -174,4 +186,5 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-05 | Document created. Stage -1 built and audited. Decisions D-001…D-010 recorded. Awaiting approval to enter Stage 0. |
 | 2026-06-05 | Stage -1 **APPROVED**. Stage 0 (Market Research & Product Strategy) built and audited — 10 artifacts incl. 6 competitor profiles, 8 personas, 100/50/25 content plan, full GTM. Risks R-06, R-07 added. Awaiting approval to enter Stage 1 (first code stage). |
 | 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2. Pushed to GitHub (`origin/main`). |
-| 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3 (Services Module). |
+| 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
+| 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4 (Staff Management). |

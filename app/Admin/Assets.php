@@ -47,6 +47,9 @@ final class Assets {
 		$script     = $build_path . 'admin.js';
 		$version    = is_readable( $script ) ? (string) filemtime( $script ) : BOOKORA_VERSION;
 
+		// The Service form uses the WordPress media library for images.
+		wp_enqueue_media();
+
 		wp_enqueue_script(
 			self::HANDLE,
 			$build_url . 'admin.js',
@@ -73,6 +76,7 @@ final class Assets {
 				'restUrl' => esc_url_raw( rest_url( 'bookora/v1/' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 				'version' => BOOKORA_VERSION,
+				'screen'  => $this->current_screen(),
 			)
 		);
 	}
@@ -85,5 +89,16 @@ final class Assets {
 	 */
 	private function is_bookora_screen( string $hook ): bool {
 		return str_contains( $hook, Menu::SLUG );
+	}
+
+	/**
+	 * Initial SPA screen derived from the current admin page slug.
+	 *
+	 * @return string
+	 */
+	private function current_screen(): string {
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		return Menu::SLUG . '-services' === $page ? 'services' : 'dashboard';
 	}
 }
