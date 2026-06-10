@@ -13,6 +13,7 @@ use Bookora\Admin\AdminServiceProvider;
 use Bookora\API\ApiServiceProvider;
 use Bookora\Core\Contracts\ServiceProvider;
 use Bookora\Database\DatabaseServiceProvider;
+use Bookora\Customers\CustomersServiceProvider;
 use Bookora\Security\SecurityServiceProvider;
 use Bookora\Services\ServicesServiceProvider;
 use Bookora\Staff\StaffServiceProvider;
@@ -56,6 +57,7 @@ final class Plugin {
 		SecurityServiceProvider::class,
 		ServicesServiceProvider::class,
 		StaffServiceProvider::class,
+		CustomersServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,
 	);

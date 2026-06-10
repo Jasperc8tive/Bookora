@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 4 — Staff Management Module** |
+| Current stage | **STAGE 5 — Customer Management (CRM)** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-09 |
@@ -58,8 +58,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **1** | Project Foundation | **COMPLETE — Audited** | ✅ APPROVED 2026-06-08 |
 | **2** | Authorization + Security Framework | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
 | **3** | Services Module | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
-| **4** | Staff Management Module | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 5 | Customer Management (CRM) | Not started | — |
+| **4** | Staff Management Module | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
+| **5** | Customer Management (CRM) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 6 | Booking Engine | Not started | — |
 | 7 | Booking Wizard (front-end) | Not started | — |
 | 8 | Calendar System (admin) | Not started | — |
@@ -76,6 +76,18 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 5 Artifact Index
+
+Code in [`app/Customers/`](../app/Customers/), REST in [`app/API/Controllers/`](../app/API/Controllers/), UI in [`assets/src/admin/components/customers/`](../assets/src/admin/components/customers/). No migration (tags + polymorphic notes already in Stage-1 schema). Stage docs in [`docs/stage-5-customers/`](stage-5-customers/):
+
+| Artifact | File |
+|---|---|
+| Stage 5 Audit & Plugin Audit Report | [stage-audit.md](stage-5-customers/stage-audit.md) |
+| Repositories | [CustomerRepository.php](../app/Customers/CustomerRepository.php) · [NoteRepository.php](../app/Customers/NoteRepository.php) |
+| Manager | [CustomerManager.php](../app/Customers/CustomerManager.php) |
+| REST controllers | [CustomersController.php](../app/API/Controllers/CustomersController.php) · [CustomerNotesController.php](../app/API/Controllers/CustomerNotesController.php) |
+| Admin UI | [CustomersPage.tsx](../assets/src/admin/components/customers/CustomersPage.tsx) · [CustomerForm.tsx](../assets/src/admin/components/customers/CustomerForm.tsx) |
 
 ### Stage 4 Artifact Index
 
@@ -200,4 +212,5 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-08 | Stage 0 **APPROVED**. Detailed 18-stage engineering mandate received. Decisions D-011…D-014 recorded (prefix `wp_bkra_`, 18-stage roadmap, React/Vite/Tailwind, PHP 8.2/WP 6.8/DDD). **Stage 1 (Project Foundation) built & audited**: plugin scaffold, DI container, migration system + 12 tables, repository, settings, logger, REST `bookora/v1` + `/system/health`, admin React dashboard. PHPStan/PHPCS/ESLint/Jest/Vite green; PHPUnit WP-integration suite written (run in CI). Awaiting approval to enter Stage 2. Pushed to GitHub (`origin/main`). |
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
-| 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5 (Customer CRM). |
+| 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-09 | Stage 4 **APPROVED** + pushed. **Stage 5 (Customer CRM) built & audited** (no migration — tags + polymorphic notes already in schema): `CustomerRepository` (search/tag-filter/paginate + distinct-tags + booking-history join + stats) and `NoteRepository`; `CustomerManager` (profile validation + duplicate-email guard, tag encode/decode, notes add/list/delete with ownership, merged notes+audit timeline, audit events); `AuditLogRepository::for_entity`; REST `CustomersController` (CRUD + tags + bookings + timeline) + `CustomerNotesController` gated on `bookora_manage_customers`; React Customers admin (list + detail with notes/bookings/timeline). PHPStan/PHPCS/ESLint green; Jest 6/6; +13 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 6 (Booking Engine). |

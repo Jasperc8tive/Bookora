@@ -6,10 +6,11 @@ import { Nav, type Screen } from './components/Nav';
 import { SystemStatus } from './components/SystemStatus';
 import { ServicesPage } from './components/services/ServicesPage';
 import { StaffPage } from './components/staff/StaffPage';
+import { CustomersPage } from './components/customers/CustomersPage';
 
 function initialScreen(): Screen {
   const screen = window.BookoraAdmin?.screen;
-  if (screen === 'services' || screen === 'staff') {
+  if (screen === 'services' || screen === 'staff' || screen === 'customers') {
     return screen;
   }
   return 'dashboard';
@@ -21,6 +22,9 @@ function Screen({ screen }: { screen: Screen }) {
   }
   if (screen === 'staff') {
     return <StaffPage />;
+  }
+  if (screen === 'customers') {
+    return <CustomersPage />;
   }
   return <SystemStatus />;
 }

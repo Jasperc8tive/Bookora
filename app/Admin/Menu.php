@@ -98,5 +98,14 @@ final class Menu {
 			self::SLUG . '-staff',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Customers', 'bookora' ),
+			__( 'Customers', 'bookora' ),
+			Capabilities::MANAGE_CUSTOMERS,
+			self::SLUG . '-customers',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

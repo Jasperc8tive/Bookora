@@ -69,6 +69,51 @@ export interface Availability {
   holidays: AvailabilityDateEntry[];
 }
 
+export interface CustomerStats {
+  count: number;
+  last_at: string | null;
+  total_spent: number;
+}
+
+export interface Customer {
+  id: number;
+  name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone: string | null;
+  timezone: string | null;
+  locale: string | null;
+  tags?: string[];
+  stats?: CustomerStats;
+}
+
+export interface CustomerNote {
+  id: number;
+  body: string;
+  author_id: number | null;
+  is_private: number;
+  created_at: string;
+}
+
+export interface CustomerBooking {
+  id: number;
+  start_at: string;
+  end_at: string;
+  status: string;
+  total: string;
+  currency: string;
+  service_name: string | null;
+  staff_name: string | null;
+}
+
+export interface TimelineEvent {
+  type: string;
+  at: string;
+  summary: string;
+  meta: Record<string, unknown>;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

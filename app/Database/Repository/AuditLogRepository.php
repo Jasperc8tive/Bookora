@@ -45,6 +45,24 @@ final class AuditLogRepository extends AbstractRepository {
 	}
 
 	/**
+	 * Audit entries for a specific entity, newest first.
+	 *
+	 * @param string $entity_type Entity type, e.g. "customer".
+	 * @param int    $entity_id   Entity id.
+	 * @param int    $limit       Maximum rows.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function for_entity( string $entity_type, int $entity_id, int $limit = 50 ): array {
+		$table = $this->table();
+		$sql   = "SELECT id, action, actor_type, actor_id, context, created_at FROM `{$table}`
+			WHERE entity_type = %s AND entity_id = %d ORDER BY id DESC LIMIT %d";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$rows = $this->wpdb->get_results( $this->wpdb->prepare( $sql, $entity_type, $entity_id, max( 1, $limit ) ), ARRAY_A );
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Verify the integrity of the hash chain.
 	 *
 	 * @return bool True when every row's after_hash matches sha256(prev_hash + payload_hash).
