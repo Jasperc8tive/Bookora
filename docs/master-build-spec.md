@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 5 — Customer Management (CRM)** |
+| Current stage | **STAGE 6 — Booking Engine** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-09 |
@@ -44,6 +44,8 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-014 | **PHP 8.2+ / WP 6.8+**, DDD `app/` layout, lightweight PSR-11 container, service-provider pattern, migration system | Adopt Stage 1 mandate stack; minimal vendor footprint for a commercial plugin. | 2026-06-08 | 1 |
 | D-015 | Authorization is **capability-based** (`bookora_*` caps) with a 4-tier role model (Admin/Manager/Staff/Customer); no `manage_options` shortcuts | Least privilege; clean basis for agency/white-label scoping later. | 2026-06-09 | 2 |
 | D-016 | Audit log is **append-only + SHA-256 hash-chained**; IP/UA stored HMAC-hashed only | Tamper-evidence + NDPR/GDPR-friendly (no raw PII in logs). | 2026-06-09 | 2 |
+| D-017 | All appointment times stored **UTC**; availability rules interpreted in the **WP site timezone**; engine math in epoch seconds | Correct cross-timezone scheduling; DST-safe; single source of truth. | 2026-06-09 | 6 |
+| D-018 | Booking concurrency = per-staff **`GET_LOCK`** around check-and-insert + buffer-aware recheck + unique `idempotency_key` | Race-safe double-book prevention on MySQL; degrades to best-effort elsewhere. | 2026-06-09 | 6 |
 
 ---
 
@@ -59,8 +61,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **2** | Authorization + Security Framework | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
 | **3** | Services Module | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
 | **4** | Staff Management Module | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
-| **5** | Customer Management (CRM) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 6 | Booking Engine | Not started | — |
+| **5** | Customer Management (CRM) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
+| **6** | Booking Engine | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 7 | Booking Wizard (front-end) | Not started | — |
 | 8 | Calendar System (admin) | Not started | — |
 | 9 | Payments (Stripe, Paystack, Flutterwave) | Not started | — |
@@ -76,6 +78,20 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 6 Artifact Index
+
+Code in [`app/Appointments/`](../app/Appointments/), REST in [`app/API/Controllers/`](../app/API/Controllers/). Migration 0004 adds `wp_bkra_booking_holds`. Engine-only stage (no React UI). Stage docs in [`docs/stage-6-booking-engine/`](stage-6-booking-engine/):
+
+| Artifact | File |
+|---|---|
+| Stage 6 Audit & Plugin Audit Report | [stage-audit.md](stage-6-booking-engine/stage-audit.md) |
+| Clock (timezone) | [Clock.php](../app/Appointments/Clock.php) |
+| Repositories | [AppointmentRepository.php](../app/Appointments/AppointmentRepository.php) · [BookingHoldRepository.php](../app/Appointments/BookingHoldRepository.php) |
+| Conflict detector | [ConflictDetector.php](../app/Appointments/ConflictDetector.php) |
+| Availability engine | [AvailabilityEngine.php](../app/Appointments/AvailabilityEngine.php) |
+| Booking engine | [BookingEngine.php](../app/Appointments/BookingEngine.php) |
+| REST controllers | [AvailabilityController.php](../app/API/Controllers/AvailabilityController.php) · [BookingsController.php](../app/API/Controllers/BookingsController.php) |
 
 ### Stage 5 Artifact Index
 
@@ -213,4 +229,5 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-09 | Stage 5 **APPROVED** + pushed. **Stage 6 (Booking Engine) built & audited**: migration 0004 (`booking_holds`); `Clock` (UTC↔local, DST-safe); `AppointmentRepository` + `BookingHoldRepository`; `ConflictDetector` (buffer-aware half-open overlap); `AvailabilityEngine` (working hours − breaks − time off/holidays − appts − holds, notice windows, group capacity); `BookingEngine` (create/recurring/group/idempotency/per-staff GET_LOCK, reschedule, cancel, hold); REST `AvailabilityController` + `BookingsController` gated on `bookora_manage_bookings`. Decisions D-017/D-018. PHPStan/PHPCS/ESLint green; Jest 6/6; +18 PHPUnit cases (CI). Engine-only stage (wizard is Stage 7). Awaiting approval to enter Stage 7. |
 | 2026-06-09 | Stage 4 **APPROVED** + pushed. **Stage 5 (Customer CRM) built & audited** (no migration — tags + polymorphic notes already in schema): `CustomerRepository` (search/tag-filter/paginate + distinct-tags + booking-history join + stats) and `NoteRepository`; `CustomerManager` (profile validation + duplicate-email guard, tag encode/decode, notes add/list/delete with ownership, merged notes+audit timeline, audit events); `AuditLogRepository::for_entity`; REST `CustomersController` (CRUD + tags + bookings + timeline) + `CustomerNotesController` gated on `bookora_manage_customers`; React Customers admin (list + detail with notes/bookings/timeline). PHPStan/PHPCS/ESLint green; Jest 6/6; +13 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 6 (Booking Engine). |

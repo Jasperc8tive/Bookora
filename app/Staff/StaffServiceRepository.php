@@ -48,6 +48,24 @@ final class StaffServiceRepository extends AbstractRepository {
 	}
 
 	/**
+	 * Active staff ids assigned to a service.
+	 *
+	 * @param int $service_id Service id.
+	 * @return array<int, int>
+	 */
+	public function staff_ids_for_service( int $service_id ): array {
+		$join  = $this->table();
+		$staff = $this->schema->table( 'staff' );
+		$sql   = "SELECT ss.staff_id FROM `{$join}` ss
+			INNER JOIN `{$staff}` st ON st.id = ss.staff_id
+			WHERE ss.service_id = %d AND st.deleted_at IS NULL AND st.status = 'active'";
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$ids = $this->wpdb->get_col( $this->wpdb->prepare( $sql, $service_id ) );
+
+		return array_map( 'intval', (array) $ids );
+	}
+
+	/**
 	 * Replace the full set of service assignments for a staff member.
 	 *
 	 * @param int            $staff_id    Staff id.
