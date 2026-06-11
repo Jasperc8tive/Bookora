@@ -17,6 +17,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         admin: resolve(__dirname, 'assets/src/admin/main.tsx'),
+        frontend: resolve(__dirname, 'assets/src/frontend/main.tsx'),
       },
       output: {
         entryFileNames: '[name].js',

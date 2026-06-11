@@ -1,0 +1,9 @@
+/*
+ * Front-end booking wizard styles.
+ *
+ * Only components + utilities (NO @tailwind base / preflight) so the widget
+ * never resets the host theme's global element styles. The `bkra-` prefix and
+ * `important: true` keep these utilities scoped and able to win over theme CSS.
+ */
+@tailwind components;
+@tailwind utilities;

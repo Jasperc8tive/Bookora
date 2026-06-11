@@ -156,6 +156,39 @@ final class CustomerManager {
 	}
 
 	/**
+	 * Find an existing customer by email or phone, or create a new one.
+	 *
+	 * Used by the public booking flow to avoid duplicate records.
+	 *
+	 * @param array<string, mixed> $contact Contact details (name, email, phone).
+	 * @return int|WP_Error Customer id, or a validation error.
+	 */
+	public function resolve_or_create( array $contact ): int|WP_Error {
+		$email = isset( $contact['email'] ) ? sanitize_email( (string) $contact['email'] ) : '';
+		if ( '' !== $email && is_email( $email ) ) {
+			$existing = $this->customers->find_by( array( 'email' => $email ) );
+			if ( null !== $existing ) {
+				return (int) $existing['id'];
+			}
+		}
+
+		$phone = isset( $contact['phone'] ) ? sanitize_text_field( (string) $contact['phone'] ) : '';
+		if ( '' !== $phone ) {
+			$existing = $this->customers->find_by( array( 'phone' => $phone ) );
+			if ( null !== $existing ) {
+				return (int) $existing['id'];
+			}
+		}
+
+		$created = $this->create( $contact );
+		if ( $created instanceof WP_Error ) {
+			return $created;
+		}
+
+		return (int) $created['id'];
+	}
+
+	/**
 	 * List a customer's notes.
 	 *
 	 * @param int $customer_id Customer id.

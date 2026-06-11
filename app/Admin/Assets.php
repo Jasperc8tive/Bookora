@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Bookora\Admin;
 
+use Bookora\Core\ModuleScript;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -57,6 +59,7 @@ final class Assets {
 			$version,
 			true
 		);
+		ModuleScript::enable( self::HANDLE );
 
 		// Vite emits the entry CSS alongside the JS.
 		$style = $build_path . 'admin.css';

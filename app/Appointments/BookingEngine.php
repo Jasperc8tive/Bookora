@@ -107,6 +107,7 @@ final class BookingEngine {
 		}
 
 		$status = in_array( $input['status'] ?? '', self::STATUSES, true ) ? (string) $input['status'] : 'confirmed';
+		$source = 'online' === ( $input['source'] ?? '' ) ? 'online' : 'admin';
 		$starts = $this->occurrences( $base, $input['recurrence'] ?? null );
 
 		$created = array();
@@ -114,7 +115,7 @@ final class BookingEngine {
 
 		$this->with_staff_lock(
 			$staff_id,
-			function () use ( $service, $staff_id, $customer_id, $starts, $status, $input, &$created, &$skipped ): void {
+			function () use ( $service, $staff_id, $customer_id, $starts, $status, $source, $input, &$created, &$skipped ): void {
 				$parent_id = null;
 				$single    = count( $starts ) === 1;
 
@@ -128,7 +129,8 @@ final class BookingEngine {
 						$single ? (string) ( $input['idempotency_key'] ?? '' ) : '',
 						(string) ( $input['session_token'] ?? '' ),
 						$parent_id,
-						(int) ( $input['location_id'] ?? 0 )
+						(int) ( $input['location_id'] ?? 0 ),
+						$source
 					);
 
 					if ( null === $id ) {
@@ -306,9 +308,10 @@ final class BookingEngine {
 	 * @param string               $token       Hold session token to ignore.
 	 * @param int|null             $parent_id   Parent recurring id.
 	 * @param int                  $location_id Location id.
+	 * @param string               $source      Booking source (admin|online).
 	 * @return int|null
 	 */
-	private function book_one( array $service, int $staff_id, int $customer_id, int $start, string $status, string $idempotency, string $token, ?int $parent_id, int $location_id ): ?int {
+	private function book_one( array $service, int $staff_id, int $customer_id, int $start, string $status, string $idempotency, string $token, ?int $parent_id, int $location_id, string $source = 'admin' ): ?int {
 		if ( '' !== $idempotency ) {
 			$existing = $this->appointments->find_by_idempotency( $idempotency );
 			if ( null !== $existing ) {
@@ -336,7 +339,7 @@ final class BookingEngine {
 				'total'               => $price,
 				'balance_due'         => $price,
 				'currency'            => (string) $service['currency'],
-				'source'              => 'admin',
+				'source'              => $source,
 				'idempotency_key'     => '' !== $idempotency ? $idempotency : null,
 				'parent_recurring_id' => $parent_id,
 			)
