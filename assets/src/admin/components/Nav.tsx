@@ -1,7 +1,7 @@
 /**
  * Top-level admin navigation between Bookora screens.
  */
-export type Screen = 'dashboard' | 'services' | 'staff' | 'customers' | 'calendar';
+export type Screen = 'dashboard' | 'services' | 'staff' | 'customers' | 'calendar' | 'payments';
 
 const TABS: { id: Screen; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -9,6 +9,7 @@ const TABS: { id: Screen; label: string }[] = [
   { id: 'services', label: 'Services' },
   { id: 'staff', label: 'Staff' },
   { id: 'customers', label: 'Customers' },
+  { id: 'payments', label: 'Payments' },
 ];
 
 export function Nav({ active, onChange }: { active: Screen; onChange: (s: Screen) => void }) {

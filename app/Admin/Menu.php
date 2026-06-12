@@ -116,5 +116,14 @@ final class Menu {
 			self::SLUG . '-customers',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Payments', 'bookora' ),
+			__( 'Payments', 'bookora' ),
+			Capabilities::MANAGE_PAYMENTS,
+			self::SLUG . '-payments',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

@@ -16,6 +16,7 @@ use Bookora\Database\DatabaseServiceProvider;
 use Bookora\Appointments\AppointmentsServiceProvider;
 use Bookora\Customers\CustomersServiceProvider;
 use Bookora\Frontend\FrontendServiceProvider;
+use Bookora\Payments\PaymentsServiceProvider;
 use Bookora\Security\SecurityServiceProvider;
 use Bookora\Services\ServicesServiceProvider;
 use Bookora\Staff\StaffServiceProvider;
@@ -61,6 +62,7 @@ final class Plugin {
 		StaffServiceProvider::class,
 		CustomersServiceProvider::class,
 		AppointmentsServiceProvider::class,
+		PaymentsServiceProvider::class,
 		FrontendServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,

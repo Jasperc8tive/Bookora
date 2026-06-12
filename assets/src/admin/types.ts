@@ -114,6 +114,28 @@ export interface TimelineEvent {
   meta: Record<string, unknown>;
 }
 
+export interface Payment {
+  id: number;
+  appointment_id: number | null;
+  customer_id: number | null;
+  gateway: string;
+  amount: string;
+  currency: string;
+  status: string;
+  type: string;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export interface GatewaySettingsView {
+  enabled: boolean;
+  public_key: string;
+  has_secret: boolean;
+  has_webhook: boolean;
+}
+
+export type PaymentSettingsView = Record<string, GatewaySettingsView>;
+
 export interface Paginated<T> {
   items: T[];
   total: number;

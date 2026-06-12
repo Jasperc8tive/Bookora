@@ -46,6 +46,25 @@ class Settings {
 			'week_starts_on'           => 1,
 			'log_level'                => 'error',
 			'delete_data_on_uninstall' => false,
+			'payments'                 => array(
+				'paystack'    => array(
+					'enabled'    => false,
+					'public_key' => '',
+					'secret_key' => '',
+				),
+				'flutterwave' => array(
+					'enabled'     => false,
+					'public_key'  => '',
+					'secret_key'  => '',
+					'secret_hash' => '',
+				),
+				'stripe'      => array(
+					'enabled'         => false,
+					'publishable_key' => '',
+					'secret_key'      => '',
+					'webhook_secret'  => '',
+				),
+			),
 		);
 	}
 

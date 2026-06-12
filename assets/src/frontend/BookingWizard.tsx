@@ -37,6 +37,7 @@ export function BookingWizard({ initialServiceId }: { initialServiceId?: number 
   const [token, setToken] = useState<string>('');
   const [details, setDetails] = useState({ name: '', email: '', phone: '', hp: '' });
   const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const [gateways, setGateways] = useState<{ key: string; label: string }[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +56,9 @@ export function BookingWizard({ initialServiceId }: { initialServiceId?: number 
       })
       .catch(() => setError('Could not load services.'))
       .finally(() => setLoading(false));
+    void apiGet<{ gateways: { key: string; label: string }[] }>('book/pay/gateways')
+      .then((r) => setGateways(r.gateways))
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -127,14 +131,13 @@ export function BookingWizard({ initialServiceId }: { initialServiceId?: number 
     }
   };
 
-  const confirmBooking = async () => {
+  /** Create the (pending) appointment; returns its id or null on failure. */
+  const createAppointment = async (): Promise<BookingConfirmation | null> => {
     if (!service || !slot) {
-      return;
+      return null;
     }
-    setError('');
-    setLoading(true);
     try {
-      const result = await apiPost<BookingConfirmation>('book/appointments', {
+      return await apiPost<BookingConfirmation>('book/appointments', {
         service_id: service.id,
         staff_id: slot.staff_id,
         start: slot.start_local,
@@ -142,11 +145,46 @@ export function BookingWizard({ initialServiceId }: { initialServiceId?: number 
         customer: { name: details.name, email: details.email, phone: details.phone },
         hp: details.hp,
       });
-      setConfirmation(result);
-      setStep('done');
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not complete your booking.');
-    } finally {
+      return null;
+    }
+  };
+
+  /** Pay at the venue: just create the booking. */
+  const confirmBooking = async () => {
+    setError('');
+    setLoading(true);
+    const result = await createAppointment();
+    if (result) {
+      setConfirmation(result);
+      setStep('done');
+    }
+    setLoading(false);
+  };
+
+  /** Pay online: create the booking, then redirect to the gateway. */
+  const payOnline = async (gatewayKey: string) => {
+    setError('');
+    setLoading(true);
+    const result = await createAppointment();
+    if (!result) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const init = await apiPost<{ redirect_url: string }>('book/pay/initialize', {
+        appointment_id: result.appointment.id,
+        gateway: gatewayKey,
+        type: 'full',
+        callback_url: window.location.href,
+      });
+      window.location.href = init.redirect_url;
+    } catch (e) {
+      // Booking is already reserved; fall back to pay-on-site messaging.
+      setConfirmation(result);
+      setStep('done');
+      setError(e instanceof ApiError ? e.message : 'Online payment could not start; your booking is reserved.');
       setLoading(false);
     }
   };
@@ -288,9 +326,24 @@ export function BookingWizard({ initialServiceId }: { initialServiceId?: number 
             <div className="bkra-flex bkra-justify-between"><dt>When</dt><dd>{slot.start_local.slice(0, 16)}</dd></div>
             <div className="bkra-flex bkra-justify-between bkra-font-medium"><dt>Total</dt><dd>{money(service.price, service.currency)}</dd></div>
           </dl>
-          <p className="bkra-text-xs bkra-text-gray-500">Online payment is coming soon — your booking will be reserved and you can pay at the venue.</p>
-          <button type="button" onClick={() => void confirmBooking()} disabled={loading} className="bkra-w-full bkra-rounded-lg bkra-bg-bookora-600 bkra-p-3 bkra-font-medium bkra-text-white disabled:bkra-opacity-50">
-            Confirm booking
+          {gateways.length > 0 && (
+            <div className="bkra-space-y-2">
+              <p className="bkra-text-xs bkra-text-gray-500">Pay securely online:</p>
+              {gateways.map((g) => (
+                <button
+                  key={g.key}
+                  type="button"
+                  onClick={() => void payOnline(g.key)}
+                  disabled={loading}
+                  className="bkra-w-full bkra-rounded-lg bkra-bg-bookora-600 bkra-p-3 bkra-font-medium bkra-text-white disabled:bkra-opacity-50"
+                >
+                  Pay with {g.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <button type="button" onClick={() => void confirmBooking()} disabled={loading} className="bkra-w-full bkra-rounded-lg bkra-border bkra-border-bookora-600 bkra-p-3 bkra-font-medium bkra-text-bookora-700 disabled:bkra-opacity-50">
+            {gateways.length > 0 ? 'Pay at the venue' : 'Confirm booking'}
           </button>
           <BackButton onClick={() => setStep('details')} />
         </section>
