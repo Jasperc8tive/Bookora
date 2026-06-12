@@ -176,7 +176,7 @@ final class BookingEngine {
 	 * Reschedule an appointment to a new time and/or staff member.
 	 *
 	 * @param int                  $id    Appointment id.
-	 * @param array<string, mixed> $input New start and/or staff_id.
+	 * @param array<string, mixed> $input New start, staff_id, and/or end (resize).
 	 * @return array<string, mixed>|WP_Error
 	 */
 	public function reschedule( int $id, array $input ): array|WP_Error {
@@ -196,7 +196,15 @@ final class BookingEngine {
 			return new WP_Error( 'bookora_invalid_start', __( 'Invalid start date/time.', 'bookora' ), array( 'status' => 422 ) );
 		}
 
-		$end = $start + ( max( 1, (int) $service['duration_min'] ) * MINUTE_IN_SECONDS );
+		// An explicit end supports calendar resize; otherwise use the service duration.
+		if ( isset( $input['end'] ) ) {
+			$end = $this->parse_local( (string) $input['end'] );
+			if ( null === $end || $end <= $start ) {
+				return new WP_Error( 'bookora_invalid_end', __( 'Invalid end date/time.', 'bookora' ), array( 'status' => 422 ) );
+			}
+		} else {
+			$end = $start + ( max( 1, (int) $service['duration_min'] ) * MINUTE_IN_SECONDS );
+		}
 
 		$taken = $this->with_staff_lock(
 			$staff_id,

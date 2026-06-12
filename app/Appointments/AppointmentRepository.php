@@ -60,6 +60,56 @@ final class AppointmentRepository extends AbstractRepository {
 	}
 
 	/**
+	 * Calendar feed: appointments overlapping a UTC range, joined with service,
+	 * staff, and customer display data.
+	 *
+	 * @param string $from_utc Range start (UTC).
+	 * @param string $to_utc   Range end (UTC).
+	 * @param array{staff_id?: int, status?: string, service_id?: int} $filters Optional filters.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function calendar( string $from_utc, string $to_utc, array $filters = array() ): array {
+		$appointments = $this->table();
+		$services     = $this->schema->table( 'services' );
+		$staff        = $this->schema->table( 'staff' );
+		$customers    = $this->schema->table( 'customers' );
+
+		$clauses = array( 'a.deleted_at IS NULL', 'a.start_at < %s', 'a.end_at > %s' );
+		$values  = array( $to_utc, $from_utc );
+
+		if ( ! empty( $filters['staff_id'] ) ) {
+			$clauses[] = 'a.staff_id = %d';
+			$values[]  = (int) $filters['staff_id'];
+		}
+		if ( ! empty( $filters['service_id'] ) ) {
+			$clauses[] = 'a.service_id = %d';
+			$values[]  = (int) $filters['service_id'];
+		}
+		if ( ! empty( $filters['status'] ) ) {
+			$clauses[] = 'a.status = %s';
+			$values[]  = (string) $filters['status'];
+		}
+
+		$where = implode( ' AND ', $clauses );
+		$sql   = "SELECT a.id, a.start_at, a.end_at, a.status, a.staff_id, a.service_id, a.customer_id,
+				a.total, a.currency,
+				s.name AS service_name,
+				st.display_name AS staff_name, st.color AS staff_color,
+				c.name AS customer_name
+			FROM `{$appointments}` a
+			LEFT JOIN `{$services}` s ON a.service_id = s.id
+			LEFT JOIN `{$staff}` st ON a.staff_id = st.id
+			LEFT JOIN `{$customers}` c ON a.customer_id = c.id
+			WHERE {$where}
+			ORDER BY a.start_at ASC";
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$rows = $this->wpdb->get_results( $this->wpdb->prepare( $sql, $values ), ARRAY_A );
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Find an appointment by idempotency key.
 	 *
 	 * @param string $key Idempotency key.

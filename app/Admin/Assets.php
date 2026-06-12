@@ -103,6 +103,7 @@ final class Assets {
 		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		return match ( $page ) {
+			Menu::SLUG . '-calendar'  => 'calendar',
 			Menu::SLUG . '-services'  => 'services',
 			Menu::SLUG . '-staff'     => 'staff',
 			Menu::SLUG . '-customers' => 'customers',

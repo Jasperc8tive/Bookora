@@ -1,10 +1,11 @@
 /**
  * Top-level admin navigation between Bookora screens.
  */
-export type Screen = 'dashboard' | 'services' | 'staff' | 'customers';
+export type Screen = 'dashboard' | 'services' | 'staff' | 'customers' | 'calendar';
 
 const TABS: { id: Screen; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'calendar', label: 'Calendar' },
   { id: 'services', label: 'Services' },
   { id: 'staff', label: 'Staff' },
   { id: 'customers', label: 'Customers' },

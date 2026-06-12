@@ -77,6 +77,16 @@ final class BookingsController extends AbstractController {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
+			'/bookings/calendar',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'calendar' ),
+				'permission_callback' => $can,
+			)
+		);
+
+		register_rest_route(
+			self::REST_NAMESPACE,
 			'/bookings/(?P<id>\d+)',
 			array(
 				array(
@@ -128,6 +138,79 @@ final class BookingsController extends AbstractController {
 		}
 
 		return $this->success( $this->repository->paginate( $args ) );
+	}
+
+	/**
+	 * Calendar feed: appointments in a date range as FullCalendar events.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|\WP_Error
+	 */
+	public function calendar( WP_REST_Request $request ) {
+		$from = (string) $request->get_param( 'from' );
+		$to   = (string) $request->get_param( 'to' );
+		if ( 1 !== preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from ) || 1 !== preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to ) ) {
+			return $this->error( 'bookora_invalid_range', __( 'from and to must be YYYY-MM-DD.', 'bookora' ), 422 );
+		}
+
+		$rows   = $this->repository->calendar(
+			$this->clock->day_bounds_utc( $from )[0],
+			$this->clock->day_bounds_utc( $to )[0],
+			array(
+				'staff_id'   => (int) $request->get_param( 'staff_id' ),
+				'service_id' => (int) $request->get_param( 'service_id' ),
+				'status'     => (string) $request->get_param( 'status' ),
+			)
+		);
+		$events = array_map( array( $this, 'to_event' ), $rows );
+
+		return $this->success( array( 'events' => $events ) );
+	}
+
+	/**
+	 * Map an appointment row to a FullCalendar event (times in site-local ISO).
+	 *
+	 * @param array<string, mixed> $row Appointment row.
+	 * @return array<string, mixed>
+	 */
+	private function to_event( array $row ): array {
+		$status   = (string) $row['status'];
+		$customer = (string) ( $row['customer_name'] ?? __( 'Customer', 'bookora' ) );
+		$service  = (string) ( $row['service_name'] ?? __( 'Service', 'bookora' ) );
+		$color    = '' !== (string) ( $row['staff_color'] ?? '' ) ? (string) $row['staff_color'] : $this->status_color( $status );
+
+		return array(
+			'id'              => (string) $row['id'],
+			'title'           => $service . ' — ' . $customer,
+			'start'           => str_replace( ' ', 'T', $this->clock->local_string( $this->clock->utc_to_epoch( (string) $row['start_at'] ) ) ),
+			'end'             => str_replace( ' ', 'T', $this->clock->local_string( $this->clock->utc_to_epoch( (string) $row['end_at'] ) ) ),
+			'backgroundColor' => $color,
+			'borderColor'     => $color,
+			'extendedProps'   => array(
+				'status'       => $status,
+				'staff_id'     => (int) $row['staff_id'],
+				'staff_name'   => (string) ( $row['staff_name'] ?? '' ),
+				'service_id'   => (int) $row['service_id'],
+				'customer_id'  => (int) $row['customer_id'],
+				'customerName' => $customer,
+			),
+		);
+	}
+
+	/**
+	 * Default event colour by status.
+	 *
+	 * @param string $status Appointment status.
+	 * @return string
+	 */
+	private function status_color( string $status ): string {
+		return match ( $status ) {
+			'confirmed' => '#0d9488',
+			'completed' => '#16a34a',
+			'cancelled' => '#9ca3af',
+			'no_show'   => '#dc2626',
+			default     => '#d97706',
+		};
 	}
 
 	/**

@@ -83,6 +83,15 @@ final class Menu {
 
 		add_submenu_page(
 			self::SLUG,
+			__( 'Calendar', 'bookora' ),
+			__( 'Calendar', 'bookora' ),
+			Capabilities::MANAGE_BOOKINGS,
+			self::SLUG . '-calendar',
+			array( $this->dashboard, 'render' )
+		);
+
+		add_submenu_page(
+			self::SLUG,
 			__( 'Services', 'bookora' ),
 			__( 'Services', 'bookora' ),
 			Capabilities::MANAGE_SERVICES,

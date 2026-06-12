@@ -7,16 +7,20 @@ import { SystemStatus } from './components/SystemStatus';
 import { ServicesPage } from './components/services/ServicesPage';
 import { StaffPage } from './components/staff/StaffPage';
 import { CustomersPage } from './components/customers/CustomersPage';
+import { CalendarPage } from './components/calendar/CalendarPage';
 
 function initialScreen(): Screen {
   const screen = window.BookoraAdmin?.screen;
-  if (screen === 'services' || screen === 'staff' || screen === 'customers') {
+  if (screen === 'services' || screen === 'staff' || screen === 'customers' || screen === 'calendar') {
     return screen;
   }
   return 'dashboard';
 }
 
 function Screen({ screen }: { screen: Screen }) {
+  if (screen === 'calendar') {
+    return <CalendarPage />;
+  }
   if (screen === 'services') {
     return <ServicesPage />;
   }
