@@ -110,6 +110,7 @@ final class Assets {
 			Menu::SLUG . '-payments'      => 'payments',
 			Menu::SLUG . '-notifications' => 'notifications',
 			Menu::SLUG . '-integrations'  => 'integrations',
+			Menu::SLUG . '-reports'       => 'reports',
 			default                       => 'dashboard',
 		};
 	}

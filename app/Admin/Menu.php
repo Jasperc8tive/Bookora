@@ -143,5 +143,14 @@ final class Menu {
 			self::SLUG . '-integrations',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Reports', 'bookora' ),
+			__( 'Reports', 'bookora' ),
+			Capabilities::VIEW_REPORTS,
+			self::SLUG . '-reports',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

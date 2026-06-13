@@ -172,6 +172,34 @@ export interface GoogleStatus {
   connected: number[];
 }
 
+export interface ReportKpis {
+  total_bookings: number;
+  completed: number;
+  cancelled: number;
+  no_show: number;
+  revenue: number;
+  collected: number;
+  cancellation_rate: number;
+  no_show_rate: number;
+  avg_value: number;
+}
+
+export interface ReportOverview {
+  kpis: ReportKpis;
+  revenue_by_day: { date: string; revenue: number; bookings: number }[];
+  by_status: Record<string, number>;
+  by_staff: { staff_id: number; name: string; bookings: number; revenue: number }[];
+  by_service: { service_id: number; name: string; bookings: number; revenue: number }[];
+}
+
+export interface UtilizationRow {
+  staff_id: number;
+  name: string;
+  booked_minutes: number;
+  available_minutes: number;
+  utilization: number;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

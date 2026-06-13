@@ -11,6 +11,7 @@ import { CalendarPage } from './components/calendar/CalendarPage';
 import { PaymentsPage } from './components/payments/PaymentsPage';
 import { NotificationsPage } from './components/notifications/NotificationsPage';
 import { IntegrationsPage } from './components/integrations/IntegrationsPage';
+import { ReportsPage } from './components/reports/ReportsPage';
 
 function initialScreen(): Screen {
   const screen = window.BookoraAdmin?.screen;
@@ -21,7 +22,8 @@ function initialScreen(): Screen {
     screen === 'calendar' ||
     screen === 'payments' ||
     screen === 'notifications' ||
-    screen === 'integrations'
+    screen === 'integrations' ||
+    screen === 'reports'
   ) {
     return screen;
   }
@@ -40,6 +42,9 @@ function Screen({ screen }: { screen: Screen }) {
   }
   if (screen === 'integrations') {
     return <IntegrationsPage />;
+  }
+  if (screen === 'reports') {
+    return <ReportsPage />;
   }
   if (screen === 'services') {
     return <ServicesPage />;
