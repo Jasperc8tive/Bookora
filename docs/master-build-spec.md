@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 13 — Elementor Integration** |
+| Current stage | **STAGE 14 — Customer Portal** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-13 |
@@ -53,6 +53,7 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-023 | Notifications use a **channel-driver dispatcher** + event hooks (`bookora_booking_*`, `bookora_payment_succeeded`); dispatch is **async via WP-Cron** (`bookora_notify`/`bookora_send_reminder`); templates in settings | Decouples producers from delivery; keeps booking/payment requests fast; Action Scheduler is the later hardening path (R-05). | 2026-06-13 | 10 |
 | D-024 | Calendar sync = **per-staff OAuth** (`integrations` key `google_{id}`), tokens **encrypted at rest** (AES-256-GCM); external busy feeds availability via a **cached** `bookora_external_busy` filter (never a live call) | Per-staff calendars + security + availability stays fast/resilient to provider outages. | 2026-06-13 | 11 |
 | D-025 | Calendar providers share one engine: `CalendarClient` interface + `AbstractCalendarSync` + `AbstractTokenStore` + `OAuthState`; appointments hold a **`external_ids` JSON map** (provider→event id) | DRY across Google/Outlook; one appointment can sync to multiple calendars without collision. | 2026-06-13 | 12 |
+| D-026 | Customer portal auth = **stateless HMAC magic-link bearer token** (`PortalToken`, customer id + expiry), sent via `X-Bookora-Portal-Token`; every action re-checks ownership + reschedule/cancel windows | Customers aren't WP users; no server sessions; least-privilege own-data access. | 2026-06-13 | 14 |
 
 ---
 
@@ -76,8 +77,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **10** | Notifications (Email, SMS, WhatsApp, Push) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
 | **11** | Google Calendar (two-way) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
 | **12** | Outlook Calendar (MS Graph) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
-| **13** | Elementor Integration | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 14 | Customer Portal | Not started | — |
+| **13** | Elementor Integration | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
+| **14** | Customer Portal | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 15 | Reporting & Analytics | Not started | — |
 | 16 | Advanced Features (waitlist, coupons, memberships, resources) | Not started | — |
 | 17 | AI Scheduling | Not started | — |
@@ -85,6 +86,17 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 14 Artifact Index
+
+Code in [`app/Portal/`](../app/Portal/), REST in [`app/API/Controllers/PortalController.php`](../app/API/Controllers/PortalController.php), bundle in [`assets/src/portal/`](../assets/src/portal/). Stage docs in [`docs/stage-14-customer-portal/`](stage-14-customer-portal/):
+
+| Artifact | File |
+|---|---|
+| Stage 14 Audit & Plugin Audit Report | [stage-audit.md](stage-14-customer-portal/stage-audit.md) |
+| Token + manager | [PortalToken.php](../app/Portal/PortalToken.php) · [PortalManager.php](../app/Portal/PortalManager.php) |
+| REST + provider | [PortalController.php](../app/API/Controllers/PortalController.php) · [PortalServiceProvider.php](../app/Portal/PortalServiceProvider.php) |
+| Portal app | [PortalApp.tsx](../assets/src/portal/PortalApp.tsx) · [main.tsx](../assets/src/portal/main.tsx) |
 
 ### Stage 13 Artifact Index
 
@@ -316,6 +328,7 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-13 | Stage 13 **APPROVED** + pushed. **Stage 14 (Customer Portal) built & audited**: stateless HMAC `PortalToken` magic-link auth; `PortalManager` (profile, upcoming/past bookings with policy flags, ownership- + window-enforced reschedule/cancel, invoice, no-enumeration link email); public token-scoped `PortalController`; `[bookora_portal]` shortcode + portal React bundle (login/dashboard/bookings/reschedule/cancel/profile) mounting `#bookora-portal-root` (activates the Stage-13 dashboard widget). Settings `portal` block; bookings query exposes service_id/staff_id. Decision D-026. PHPStan/PHPCS/ESLint green; Jest 13/13; +7 PHPUnit cases (CI); build OK (portal.js 2.75 KB gz). Awaiting approval to enter Stage 15 (Reporting). |
 | 2026-06-13 | Stage 12 **APPROVED** + pushed. **Stage 13 (Elementor Integration) built & audited**: analysed/tested `WidgetRenderer` (server-side service/staff grids + booking/calendar/portal mounts); 5 native widgets (Booking Form, Service Grid, Staff Grid, Calendar, Customer Dashboard) via a shared `AbstractBookoraWidget`; `ElementorServiceProvider` (Bookora category + widget registration, Elementor-gated, dynamic class strings); widgets dir excluded from PHPStan (Elementor not a dependency). PHPStan/PHPCS/ESLint green; Jest 11/11; +6 PHPUnit cases (CI); build OK. Must be verified inside Elementor pre-launch; Customer Dashboard mount activates with Stage 14. Awaiting approval to enter Stage 14 (Customer Portal). |
 | 2026-06-13 | Stage 11 **APPROVED** + pushed. **Stage 12 (Outlook Calendar) built & audited**: extracted shared `OAuthState` + `AbstractTokenStore` + `CalendarClient` interface + `AbstractCalendarSync` engine (Google refactored onto them, no behaviour change); Microsoft `GraphClient` (OAuth + Graph event CRUD + calendarView free/busy), `MicrosoftTokenStore` (`outlook_{id}`), `OutlookSyncService`, `OutlookCalendarController`; migration 0005 `appointments.external_ids` JSON map so an appointment syncs to Google **and** Outlook without collision; data-driven provider wiring (busy filter + push/delete + warm crons for both); generic React provider card. Decision D-025. PHPStan/PHPCS/ESLint green; Jest 11/11; +3 PHPUnit cases (CI); build OK. Live Microsoft OAuth/Graph HTTP must be verified against a real Azure app pre-launch. Awaiting approval to enter Stage 13 (Elementor Integration). |
 | 2026-06-13 | Stage 10 **APPROVED** + pushed. **Stage 11 (Google Calendar) built & audited**: `Security\Crypto` (AES-256-GCM); per-staff `GoogleTokenStore` (encrypted tokens in `integrations`, key `google_{id}`); `GoogleClient` (OAuth + events + free/busy + pure `to_event`); `CalendarSyncService` (push/delete with `external_event_id`, token refresh, cached busy); `AvailabilityEngine` `bookora_external_busy` filter (two-way conflict sync); `GoogleCalendarController` (signed OAuth state callback); React Integrations admin. Decision D-024. PHPStan/PHPCS/ESLint green; Jest 11/11; +4 PHPUnit cases (CI); build OK. Live Google OAuth/HTTP must be verified against a real project pre-launch. Awaiting approval to enter Stage 12 (Outlook Calendar). |

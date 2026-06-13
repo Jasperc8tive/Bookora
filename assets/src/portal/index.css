@@ -1,0 +1,11 @@
+/*
+ * Customer portal styles. Components + utilities only (no preflight) so the
+ * portal never resets the host theme. Prefixed + important:true scope them.
+ */
+@tailwind components;
+@tailwind utilities;
+
+/* Portal-specific marker (also keeps this bundle's CSS distinct from others). */
+#bookora-portal-root {
+  position: relative;
+}

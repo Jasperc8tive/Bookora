@@ -18,6 +18,7 @@ export default defineConfig({
       input: {
         admin: resolve(__dirname, 'assets/src/admin/main.tsx'),
         frontend: resolve(__dirname, 'assets/src/frontend/main.tsx'),
+        portal: resolve(__dirname, 'assets/src/portal/main.tsx'),
       },
       output: {
         entryFileNames: '[name].js',

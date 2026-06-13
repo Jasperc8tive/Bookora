@@ -75,7 +75,11 @@ final class WidgetRenderer {
 	 * @return string
 	 */
 	public function customer_dashboard(): string {
-		$this->enqueue_frontend();
+		if ( function_exists( 'wp_enqueue_script' ) ) {
+			wp_enqueue_script( \Bookora\Portal\PortalServiceProvider::HANDLE );
+			wp_enqueue_style( \Bookora\Portal\PortalServiceProvider::HANDLE );
+			ModuleScript::enable( \Bookora\Portal\PortalServiceProvider::HANDLE );
+		}
 
 		return '<div id="bookora-portal-root" class="bkra-portal"></div>';
 	}

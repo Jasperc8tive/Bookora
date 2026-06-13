@@ -98,6 +98,14 @@ class Settings {
 					'tenant'        => 'common',
 				),
 			),
+			'portal'                   => array(
+				'page_url'             => '',
+				'token_ttl_days'       => 14,
+				'allow_reschedule'     => true,
+				'allow_cancel'         => true,
+				'reschedule_min_hours' => 24,
+				'cancel_min_hours'     => 24,
+			),
 		);
 	}
 

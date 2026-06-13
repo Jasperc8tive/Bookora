@@ -125,7 +125,7 @@ final class CustomerRepository extends AbstractRepository {
 		$services     = $this->schema->table( 'services' );
 		$staff        = $this->schema->table( 'staff' );
 
-		$sql = "SELECT a.id, a.start_at, a.end_at, a.status, a.total, a.currency,
+		$sql = "SELECT a.id, a.service_id, a.staff_id, a.start_at, a.end_at, a.status, a.total, a.currency,
 				s.name AS service_name, st.display_name AS staff_name
 			FROM `{$appointments}` a
 			LEFT JOIN `{$services}` s ON a.service_id = s.id
