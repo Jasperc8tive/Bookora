@@ -14,3 +14,6 @@ parameters:
         - vendor/*
         - node_modules/*
         - assets/build/*
+        # Elementor widget classes extend \Elementor\Widget_Base, which is not a
+        # plugin dependency; all real logic lives in the analysed WidgetRenderer.
+        - app/Elementor/Widgets/*
