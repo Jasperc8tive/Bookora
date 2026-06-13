@@ -87,6 +87,12 @@ class Settings {
 				'reminders' => array( 'offsets' => array( 1440, 60 ) ),
 				'templates' => array(),
 			),
+			'integrations'             => array(
+				'google' => array(
+					'client_id'     => '',
+					'client_secret' => '',
+				),
+			),
 		);
 	}
 

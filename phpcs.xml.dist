@@ -16,7 +16,10 @@
     <arg value="sp"/>
 
     <!-- WordPress standards. -->
-    <rule ref="WordPress-Extra"/>
+    <rule ref="WordPress-Extra">
+        <!-- base64 encodes binary ciphertext / signed OAuth state here, not obfuscated code. -->
+        <exclude name="WordPress.PHP.DiscouragedPHPFunctions"/>
+    </rule>
     <rule ref="WordPress.WP.I18n">
         <properties>
             <property name="text_domain" type="array">

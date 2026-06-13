@@ -174,6 +174,29 @@ final class AvailabilityEngine {
 		$now_utc                   = $this->clock->utc_string( $now );
 		$day_holds                 = $this->holds->active_in_range( $staff_id, $day_from, $day_to, $now_utc );
 
+		/**
+		 * External busy intervals (e.g. synced Google/Outlook events) that should
+		 * block this staff member's availability. Each item: start_utc, end_utc.
+		 *
+		 * @param array<int, array{start_utc: string, end_utc: string}> $busy     Busy intervals.
+		 * @param int                                                    $staff_id Staff id.
+		 * @param string                                                 $day_from Range start (UTC).
+		 * @param string                                                 $day_to   Range end (UTC).
+		 */
+		$external = (array) apply_filters( 'bookora_external_busy', array(), $staff_id, $day_from, $day_to );
+		foreach ( $external as $busy ) {
+			if ( empty( $busy['start_utc'] ) || empty( $busy['end_utc'] ) ) {
+				continue;
+			}
+			$day_appts[] = array(
+				'start_at'          => (string) $busy['start_utc'],
+				'end_at'            => (string) $busy['end_utc'],
+				'service_id'        => 0,
+				'buffer_before_min' => 0,
+				'buffer_after_min'  => 0,
+			);
+		}
+
 		$slots = array();
 		foreach ( $blocks as $block ) {
 			for ( $start = $block[0]; $start + $duration <= $block[1]; $start += $duration ) {

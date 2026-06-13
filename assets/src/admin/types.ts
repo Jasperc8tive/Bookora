@@ -167,6 +167,11 @@ export interface NotificationSettings {
   templates: Record<string, Record<string, TemplateBody>>;
 }
 
+export interface GoogleStatus {
+  configured: boolean;
+  connected: number[];
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

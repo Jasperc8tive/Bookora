@@ -134,5 +134,14 @@ final class Menu {
 			self::SLUG . '-notifications',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Integrations', 'bookora' ),
+			__( 'Integrations', 'bookora' ),
+			Capabilities::MANAGE_SETTINGS,
+			self::SLUG . '-integrations',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }
