@@ -136,6 +136,37 @@ export interface GatewaySettingsView {
 
 export type PaymentSettingsView = Record<string, GatewaySettingsView>;
 
+export interface NotificationLogRow {
+  id: number;
+  channel: string;
+  event: string;
+  recipient: string | null;
+  status: string;
+  error: string | null;
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface TemplateBody {
+  subject: string;
+  body: string;
+}
+
+export type NotificationDefaults = Record<string, Record<string, TemplateBody>>;
+
+export interface NotificationSettings {
+  channels: {
+    email: { enabled: boolean };
+    sms: { enabled: boolean; sender: string; has_api_key: boolean };
+    whatsapp: { enabled: boolean; phone_number_id: string; has_access_token: boolean };
+    push: { enabled: boolean; endpoint: string; has_api_key: boolean };
+  };
+  reminders: { offsets: number[] };
+  events: string[];
+  defaults: NotificationDefaults;
+  templates: Record<string, Record<string, TemplateBody>>;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

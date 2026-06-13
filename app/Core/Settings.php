@@ -65,6 +65,28 @@ class Settings {
 					'webhook_secret'  => '',
 				),
 			),
+			'notifications'            => array(
+				'channels'  => array(
+					'email'    => array( 'enabled' => true ),
+					'sms'      => array(
+						'enabled' => false,
+						'api_key' => '',
+						'sender'  => '',
+					),
+					'whatsapp' => array(
+						'enabled'         => false,
+						'phone_number_id' => '',
+						'access_token'    => '',
+					),
+					'push'     => array(
+						'enabled'  => false,
+						'endpoint' => '',
+						'api_key'  => '',
+					),
+				),
+				'reminders' => array( 'offsets' => array( 1440, 60 ) ),
+				'templates' => array(),
+			),
 		);
 	}
 

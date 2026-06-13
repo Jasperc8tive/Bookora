@@ -15,10 +15,10 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 9 — Payments** |
+| Current stage | **STAGE 10 — Notifications** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
-| Last updated | 2026-06-12 |
+| Last updated | 2026-06-13 |
 
 ---
 
@@ -50,6 +50,7 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-020 | Front-end = **separate Vite entry** (`frontend.js`) mounted by `[bookora_booking]` shortcode; entries loaded as **ES modules** (shared React chunk) | Elementor-compatible; clean admin/front-end separation; no theme-CSS reset. | 2026-06-09 | 7 |
 | D-021 | Payments use a **gateway-driver pattern** (`PaymentGateway` interface + `GatewayRegistry`); providers are provider-agnostic to the manager | Paystack/Flutterwave/Stripe today, extensible via `bookora_register_gateways`. | 2026-06-12 | 9 |
 | D-022 | Payment confirmation is **webhook-authoritative** with amount+currency match + idempotency; **hosted redirect** checkout (no card data, SAQ-A); secrets masked in settings | Security + PCI scope minimisation; clients can never mark a booking paid. | 2026-06-12 | 9 |
+| D-023 | Notifications use a **channel-driver dispatcher** + event hooks (`bookora_booking_*`, `bookora_payment_succeeded`); dispatch is **async via WP-Cron** (`bookora_notify`/`bookora_send_reminder`); templates in settings | Decouples producers from delivery; keeps booking/payment requests fast; Action Scheduler is the later hardening path (R-05). | 2026-06-13 | 10 |
 
 ---
 
@@ -69,8 +70,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **6** | Booking Engine | **COMPLETE — Audited** | ✅ APPROVED 2026-06-09 |
 | **7** | Booking Wizard (front-end) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-12 |
 | **8** | Calendar System (admin) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-12 |
-| **9** | Payments (Stripe, Paystack, Flutterwave) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 10 | Notifications (Email, SMS, WhatsApp, Push) | Not started | — |
+| **9** | Payments (Stripe, Paystack, Flutterwave) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-12 |
+| **10** | Notifications (Email, SMS, WhatsApp, Push) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 11 | Google Calendar (two-way) | Not started | — |
 | 12 | Outlook Calendar (MS Graph) | Not started | — |
 | 13 | Elementor Integration | Not started | — |
@@ -82,6 +83,18 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 10 Artifact Index
+
+Code in [`app/Notifications/`](../app/Notifications/) (channels in [`app/Notifications/Channels/`](../app/Notifications/Channels/)), REST in [`app/API/Controllers/NotificationsController.php`](../app/API/Controllers/NotificationsController.php), UI in [`assets/src/admin/components/notifications/`](../assets/src/admin/components/notifications/). Domain events added in `BookingEngine`/`PaymentManager`. Stage docs in [`docs/stage-10-notifications/`](stage-10-notifications/):
+
+| Artifact | File |
+|---|---|
+| Stage 10 Audit & Plugin Audit Report | [stage-audit.md](stage-10-notifications/stage-audit.md) |
+| Channel contract + channels | [Contracts/NotificationChannel.php](../app/Notifications/Contracts/NotificationChannel.php) · [Channels/](../app/Notifications/Channels/) |
+| Dispatcher + renderer + context | [NotificationDispatcher.php](../app/Notifications/NotificationDispatcher.php) · [TemplateRenderer.php](../app/Notifications/TemplateRenderer.php) · [ContextBuilder.php](../app/Notifications/ContextBuilder.php) |
+| REST + provider | [NotificationsController.php](../app/API/Controllers/NotificationsController.php) · [NotificationsServiceProvider.php](../app/Notifications/NotificationsServiceProvider.php) |
+| Admin UI | [NotificationsPage.tsx](../assets/src/admin/components/notifications/NotificationsPage.tsx) |
 
 ### Stage 9 Artifact Index
 
@@ -267,6 +280,7 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-13 | Stage 9 **APPROVED** + pushed. **Stage 10 (Notifications) built & audited**: channel-driver dispatcher with **Email** (wp_mail, default-on), **SMS** (Termii), **WhatsApp** (Cloud API), **Push** (webhook) channels; `TemplateRenderer` (defaults + settings overrides + placeholders); `ContextBuilder`; reminder scheduling; domain events (`bookora_booking_created/rescheduled/cancelled`, `bookora_payment_succeeded`) with **async WP-Cron dispatch** + reminder cron; admin `NotificationsController` + React Notifications admin (channels/reminders/templates/test/log). Decision D-023. PHPStan/PHPCS/ESLint green; Jest 10/10; +5 PHPUnit cases via FakeChannel (CI); build OK. Live SMS/WhatsApp HTTP + WhatsApp template approval must be verified pre-launch. Awaiting approval to enter Stage 11 (Google Calendar). |
 | 2026-06-12 | Stage 8 **APPROVED** + pushed. **Stage 9 (Payments) built & audited**: gateway-driver pattern (`PaymentGateway` + `GatewayRegistry`) with **Paystack / Flutterwave / Stripe** drivers (hosted charge, signature verification, webhook parsing, refunds); `PaymentManager` (full/deposit init, webhook-authoritative confirmation with amount+currency guard + idempotency, manual payments, refund ledger, invoices/receipts, appointment paid/balance reconciliation); admin `PaymentsController` + public `PaymentWebhookController` (signed) + `PublicPaymentController`; React Payments admin (gateway settings + list + refund) and wizard online-pay step (redirect, pay-on-site fallback). Decisions D-021/D-022. PHPStan/PHPCS/ESLint green; Jest 9/9; +9 PHPUnit cases via FakeGateway (CI); build OK (public frontend.js 3.2 KB gz — hosted redirect, no SDK). Live gateway HTTP must be verified in provider test mode before launch. Awaiting approval to enter Stage 10 (Notifications). |
 | 2026-06-12 | Stage 7 **APPROVED** + pushed. **Stage 8 (Calendar System) built & audited**: `AppointmentRepository::calendar` (range + filters, joined service/staff/customer + staff colour); `GET /bookings/calendar` FullCalendar feed; `BookingEngine::reschedule` extended for explicit `end` (resize); React `CalendarPage` (month/week/day/agenda, drag=reschedule, resize=duration, staff/status filters, colour-coded) on FullCalendar 6 — isolated to the admin bundle. PHPStan/PHPCS/ESLint green; Jest 8/8; +5 PHPUnit cases (CI); build OK (admin.js 85.9 KB gz, public frontend.js unchanged 3 KB gz). Awaiting approval to enter Stage 9 (Payments). |
 | 2026-06-09 | Stage 6 **APPROVED** + pushed. **Stage 7 (Booking Wizard) built & audited**: public `book/*` REST surface (services/staff/availability/hold/appointments) defended by honeypot + rate limiter + server-authoritative pricing; `CustomerManager::resolve_or_create` (dedupe by email/phone); `BookingEngine` `source` tagging; React `BookingWizard` (service→staff→date→time→details→payment→confirmation) with slot holds; `[bookora_booking]` shortcode (Elementor-compatible); 2nd Vite entry + `ModuleScript` (ES-module loading of code-split React); Tailwind `important: true`, no front-end preflight. Decisions D-019/D-020. PHPStan/PHPCS/ESLint green; Jest 7/7; +7 PHPUnit cases (CI); build OK. Known risk: React ~45 KB gz on public page (preact/compat alias is the mitigation). Awaiting approval to enter Stage 8 (Calendar System). |

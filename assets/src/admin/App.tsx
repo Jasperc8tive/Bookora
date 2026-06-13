@@ -9,10 +9,18 @@ import { StaffPage } from './components/staff/StaffPage';
 import { CustomersPage } from './components/customers/CustomersPage';
 import { CalendarPage } from './components/calendar/CalendarPage';
 import { PaymentsPage } from './components/payments/PaymentsPage';
+import { NotificationsPage } from './components/notifications/NotificationsPage';
 
 function initialScreen(): Screen {
   const screen = window.BookoraAdmin?.screen;
-  if (screen === 'services' || screen === 'staff' || screen === 'customers' || screen === 'calendar' || screen === 'payments') {
+  if (
+    screen === 'services' ||
+    screen === 'staff' ||
+    screen === 'customers' ||
+    screen === 'calendar' ||
+    screen === 'payments' ||
+    screen === 'notifications'
+  ) {
     return screen;
   }
   return 'dashboard';
@@ -24,6 +32,9 @@ function Screen({ screen }: { screen: Screen }) {
   }
   if (screen === 'payments') {
     return <PaymentsPage />;
+  }
+  if (screen === 'notifications') {
+    return <NotificationsPage />;
   }
   if (screen === 'services') {
     return <ServicesPage />;

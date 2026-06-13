@@ -125,5 +125,14 @@ final class Menu {
 			self::SLUG . '-payments',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Notifications', 'bookora' ),
+			__( 'Notifications', 'bookora' ),
+			Capabilities::MANAGE_SETTINGS,
+			self::SLUG . '-notifications',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

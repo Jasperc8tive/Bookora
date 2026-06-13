@@ -413,6 +413,14 @@ final class PaymentManager {
 				'entity_id'   => (int) $payment['id'],
 			)
 		);
+
+		/**
+		 * Fires after a payment is confirmed.
+		 *
+		 * @param int $payment_id     The payment id.
+		 * @param int $appointment_id The related appointment id.
+		 */
+		do_action( 'bookora_payment_succeeded', (int) $payment['id'], (int) $payment['appointment_id'] );
 	}
 
 	/**

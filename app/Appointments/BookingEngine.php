@@ -166,6 +166,15 @@ final class BookingEngine {
 			)
 		);
 
+		foreach ( $created as $appointment ) {
+			/**
+			 * Fires after an appointment is created.
+			 *
+			 * @param int $appointment_id The new appointment id.
+			 */
+			do_action( 'bookora_booking_created', (int) $appointment['id'] );
+		}
+
 		return array(
 			'created' => $created,
 			'skipped' => $skipped,
@@ -232,6 +241,13 @@ final class BookingEngine {
 			)
 		);
 
+		/**
+		 * Fires after an appointment is rescheduled.
+		 *
+		 * @param int $appointment_id The appointment id.
+		 */
+		do_action( 'bookora_booking_rescheduled', $id );
+
 		return (array) $this->appointments->find( $id );
 	}
 
@@ -257,6 +273,13 @@ final class BookingEngine {
 				'context'     => array( 'reason' => sanitize_text_field( $reason ) ),
 			)
 		);
+
+		/**
+		 * Fires after an appointment is cancelled.
+		 *
+		 * @param int $appointment_id The appointment id.
+		 */
+		do_action( 'bookora_booking_cancelled', $id );
 
 		return true;
 	}

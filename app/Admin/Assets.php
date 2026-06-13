@@ -107,8 +107,9 @@ final class Assets {
 			Menu::SLUG . '-services'  => 'services',
 			Menu::SLUG . '-staff'     => 'staff',
 			Menu::SLUG . '-customers' => 'customers',
-			Menu::SLUG . '-payments'  => 'payments',
-			default                   => 'dashboard',
+			Menu::SLUG . '-payments'      => 'payments',
+			Menu::SLUG . '-notifications' => 'notifications',
+			default                       => 'dashboard',
 		};
 	}
 }
