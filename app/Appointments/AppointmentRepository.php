@@ -110,6 +110,48 @@ final class AppointmentRepository extends AbstractRepository {
 	}
 
 	/**
+	 * Get the external calendar event id for a provider (from the JSON map).
+	 *
+	 * @param int    $appointment_id Appointment id.
+	 * @param string $provider       Provider key (e.g. "google", "outlook").
+	 * @return string
+	 */
+	public function external_id( int $appointment_id, string $provider ): string {
+		$row = $this->find( $appointment_id );
+		if ( null === $row ) {
+			return '';
+		}
+		$map = json_decode( (string) ( $row['external_ids'] ?? '' ), true );
+
+		return is_array( $map ) ? (string) ( $map[ $provider ] ?? '' ) : '';
+	}
+
+	/**
+	 * Set (or clear) the external event id for a provider in the JSON map.
+	 *
+	 * @param int         $appointment_id Appointment id.
+	 * @param string      $provider       Provider key.
+	 * @param string|null $event_id       Event id, or null to clear.
+	 * @return void
+	 */
+	public function set_external_id( int $appointment_id, string $provider, ?string $event_id ): void {
+		$row = $this->find( $appointment_id );
+		if ( null === $row ) {
+			return;
+		}
+		$map = json_decode( (string) ( $row['external_ids'] ?? '' ), true );
+		$map = is_array( $map ) ? $map : array();
+
+		if ( null === $event_id || '' === $event_id ) {
+			unset( $map[ $provider ] );
+		} else {
+			$map[ $provider ] = $event_id;
+		}
+
+		$this->update( $appointment_id, array( 'external_ids' => array() === $map ? null : (string) wp_json_encode( $map ) ) );
+	}
+
+	/**
 	 * Find an appointment by idempotency key.
 	 *
 	 * @param string $key Idempotency key.

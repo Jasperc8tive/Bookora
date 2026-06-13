@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 11 — Google Calendar** |
+| Current stage | **STAGE 12 — Outlook Calendar** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-13 |
@@ -52,6 +52,7 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-022 | Payment confirmation is **webhook-authoritative** with amount+currency match + idempotency; **hosted redirect** checkout (no card data, SAQ-A); secrets masked in settings | Security + PCI scope minimisation; clients can never mark a booking paid. | 2026-06-12 | 9 |
 | D-023 | Notifications use a **channel-driver dispatcher** + event hooks (`bookora_booking_*`, `bookora_payment_succeeded`); dispatch is **async via WP-Cron** (`bookora_notify`/`bookora_send_reminder`); templates in settings | Decouples producers from delivery; keeps booking/payment requests fast; Action Scheduler is the later hardening path (R-05). | 2026-06-13 | 10 |
 | D-024 | Calendar sync = **per-staff OAuth** (`integrations` key `google_{id}`), tokens **encrypted at rest** (AES-256-GCM); external busy feeds availability via a **cached** `bookora_external_busy` filter (never a live call) | Per-staff calendars + security + availability stays fast/resilient to provider outages. | 2026-06-13 | 11 |
+| D-025 | Calendar providers share one engine: `CalendarClient` interface + `AbstractCalendarSync` + `AbstractTokenStore` + `OAuthState`; appointments hold a **`external_ids` JSON map** (provider→event id) | DRY across Google/Outlook; one appointment can sync to multiple calendars without collision. | 2026-06-13 | 12 |
 
 ---
 
@@ -73,8 +74,8 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **8** | Calendar System (admin) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-12 |
 | **9** | Payments (Stripe, Paystack, Flutterwave) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-12 |
 | **10** | Notifications (Email, SMS, WhatsApp, Push) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
-| **11** | Google Calendar (two-way) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 12 | Outlook Calendar (MS Graph) | Not started | — |
+| **11** | Google Calendar (two-way) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
+| **12** | Outlook Calendar (MS Graph) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 13 | Elementor Integration | Not started | — |
 | 14 | Customer Portal | Not started | — |
 | 15 | Reporting & Analytics | Not started | — |
@@ -84,6 +85,17 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 12 Artifact Index
+
+Shared base in [`app/Integrations/`](../app/Integrations/) (`OAuthState`, `AbstractTokenStore`, `CalendarClient`, `AbstractCalendarSync`); Microsoft in [`app/Integrations/Microsoft/`](../app/Integrations/Microsoft/); REST in [`app/API/Controllers/OutlookCalendarController.php`](../app/API/Controllers/OutlookCalendarController.php). Migration 0005 adds `appointments.external_ids`. Stage docs in [`docs/stage-12-outlook-calendar/`](stage-12-outlook-calendar/):
+
+| Artifact | File |
+|---|---|
+| Stage 12 Audit & Plugin Audit Report | [stage-audit.md](stage-12-outlook-calendar/stage-audit.md) |
+| Shared base | [OAuthState.php](../app/Integrations/OAuthState.php) · [AbstractTokenStore.php](../app/Integrations/AbstractTokenStore.php) · [CalendarClient.php](../app/Integrations/CalendarClient.php) · [AbstractCalendarSync.php](../app/Integrations/AbstractCalendarSync.php) |
+| Microsoft | [GraphClient.php](../app/Integrations/Microsoft/GraphClient.php) · [MicrosoftTokenStore.php](../app/Integrations/Microsoft/MicrosoftTokenStore.php) · [OutlookSyncService.php](../app/Integrations/Microsoft/OutlookSyncService.php) · [OutlookCalendarController.php](../app/API/Controllers/OutlookCalendarController.php) |
+| Admin UI | [ProviderIntegration.tsx](../assets/src/admin/components/integrations/ProviderIntegration.tsx) · [IntegrationsPage.tsx](../assets/src/admin/components/integrations/IntegrationsPage.tsx) |
 
 ### Stage 11 Artifact Index
 
@@ -293,6 +305,7 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-13 | Stage 11 **APPROVED** + pushed. **Stage 12 (Outlook Calendar) built & audited**: extracted shared `OAuthState` + `AbstractTokenStore` + `CalendarClient` interface + `AbstractCalendarSync` engine (Google refactored onto them, no behaviour change); Microsoft `GraphClient` (OAuth + Graph event CRUD + calendarView free/busy), `MicrosoftTokenStore` (`outlook_{id}`), `OutlookSyncService`, `OutlookCalendarController`; migration 0005 `appointments.external_ids` JSON map so an appointment syncs to Google **and** Outlook without collision; data-driven provider wiring (busy filter + push/delete + warm crons for both); generic React provider card. Decision D-025. PHPStan/PHPCS/ESLint green; Jest 11/11; +3 PHPUnit cases (CI); build OK. Live Microsoft OAuth/Graph HTTP must be verified against a real Azure app pre-launch. Awaiting approval to enter Stage 13 (Elementor Integration). |
 | 2026-06-13 | Stage 10 **APPROVED** + pushed. **Stage 11 (Google Calendar) built & audited**: `Security\Crypto` (AES-256-GCM); per-staff `GoogleTokenStore` (encrypted tokens in `integrations`, key `google_{id}`); `GoogleClient` (OAuth + events + free/busy + pure `to_event`); `CalendarSyncService` (push/delete with `external_event_id`, token refresh, cached busy); `AvailabilityEngine` `bookora_external_busy` filter (two-way conflict sync); `GoogleCalendarController` (signed OAuth state callback); React Integrations admin. Decision D-024. PHPStan/PHPCS/ESLint green; Jest 11/11; +4 PHPUnit cases (CI); build OK. Live Google OAuth/HTTP must be verified against a real project pre-launch. Awaiting approval to enter Stage 12 (Outlook Calendar). |
 | 2026-06-13 | Stage 9 **APPROVED** + pushed. **Stage 10 (Notifications) built & audited**: channel-driver dispatcher with **Email** (wp_mail, default-on), **SMS** (Termii), **WhatsApp** (Cloud API), **Push** (webhook) channels; `TemplateRenderer` (defaults + settings overrides + placeholders); `ContextBuilder`; reminder scheduling; domain events (`bookora_booking_created/rescheduled/cancelled`, `bookora_payment_succeeded`) with **async WP-Cron dispatch** + reminder cron; admin `NotificationsController` + React Notifications admin (channels/reminders/templates/test/log). Decision D-023. PHPStan/PHPCS/ESLint green; Jest 10/10; +5 PHPUnit cases via FakeChannel (CI); build OK. Live SMS/WhatsApp HTTP + WhatsApp template approval must be verified pre-launch. Awaiting approval to enter Stage 11 (Google Calendar). |
 | 2026-06-12 | Stage 8 **APPROVED** + pushed. **Stage 9 (Payments) built & audited**: gateway-driver pattern (`PaymentGateway` + `GatewayRegistry`) with **Paystack / Flutterwave / Stripe** drivers (hosted charge, signature verification, webhook parsing, refunds); `PaymentManager` (full/deposit init, webhook-authoritative confirmation with amount+currency guard + idempotency, manual payments, refund ledger, invoices/receipts, appointment paid/balance reconciliation); admin `PaymentsController` + public `PaymentWebhookController` (signed) + `PublicPaymentController`; React Payments admin (gateway settings + list + refund) and wizard online-pay step (redirect, pay-on-site fallback). Decisions D-021/D-022. PHPStan/PHPCS/ESLint green; Jest 9/9; +9 PHPUnit cases via FakeGateway (CI); build OK (public frontend.js 3.2 KB gz — hosted redirect, no SDK). Live gateway HTTP must be verified in provider test mode before launch. Awaiting approval to enter Stage 10 (Notifications). |

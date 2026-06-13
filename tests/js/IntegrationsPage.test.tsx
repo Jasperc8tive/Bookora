@@ -30,13 +30,15 @@ describe('IntegrationsPage', () => {
     delete window.BookoraAdmin;
   });
 
-  it('shows Google config and per-staff connection state', async () => {
+  it('renders both calendar providers with per-staff connection state', async () => {
     render(<IntegrationsPage />);
 
     expect(screen.getByText('Google Calendar')).toBeInTheDocument();
-    // Ada (id 1) is connected; Tunde (id 2) is not.
-    expect(await screen.findByText('Ada')).toBeInTheDocument();
-    expect(screen.getByText('Connected')).toBeInTheDocument();
-    expect(screen.getByText('Not connected')).toBeInTheDocument();
+    expect(screen.getByText('Outlook (Microsoft)')).toBeInTheDocument();
+
+    // Each provider lists both staff; Ada (id 1) connected, Tunde (id 2) not.
+    expect(await screen.findAllByText('Ada')).toHaveLength(2);
+    expect(screen.getAllByText('Connected')).toHaveLength(2);
+    expect(screen.getAllByText('Not connected')).toHaveLength(2);
   });
 });

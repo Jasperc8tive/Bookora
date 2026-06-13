@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Bookora\Integrations\Google;
 
 use Bookora\Core\Settings;
+use Bookora\Integrations\CalendarClient;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -20,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
  * Network methods are config-gated; the event-payload mapping (`to_event`) is
  * pure and unit-tested.
  */
-final class GoogleClient {
+final class GoogleClient implements CalendarClient {
 
 	private const AUTH_URL  = 'https://accounts.google.com/o/oauth2/v2/auth';
 	private const TOKEN_URL = 'https://oauth2.googleapis.com/token';

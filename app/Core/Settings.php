@@ -88,9 +88,14 @@ class Settings {
 				'templates' => array(),
 			),
 			'integrations'             => array(
-				'google' => array(
+				'google'    => array(
 					'client_id'     => '',
 					'client_secret' => '',
+				),
+				'microsoft' => array(
+					'client_id'     => '',
+					'client_secret' => '',
+					'tenant'        => 'common',
 				),
 			),
 		);

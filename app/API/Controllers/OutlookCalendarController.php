@@ -1,6 +1,6 @@
 <?php
 /**
- * Google Calendar integration REST controller.
+ * Outlook (Microsoft Graph) integration REST controller.
  *
  * @package Bookora
  */
@@ -11,9 +11,9 @@ namespace Bookora\API\Controllers;
 
 use Bookora\API\AbstractController;
 use Bookora\Core\Settings;
-use Bookora\Integrations\Google\CalendarSyncService;
-use Bookora\Integrations\Google\GoogleClient;
-use Bookora\Integrations\Google\GoogleTokenStore;
+use Bookora\Integrations\Microsoft\GraphClient;
+use Bookora\Integrations\Microsoft\MicrosoftTokenStore;
+use Bookora\Integrations\Microsoft\OutlookSyncService;
 use Bookora\Integrations\OAuthState;
 use Bookora\Security\Capabilities;
 use WP_REST_Request;
@@ -22,24 +22,24 @@ use WP_REST_Response;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Manages the Google app config, the per-staff OAuth flow, and manual sync.
+ * Manages the Microsoft app config, the per-staff OAuth flow, and manual sync.
  */
-final class GoogleCalendarController extends AbstractController {
+final class OutlookCalendarController extends AbstractController {
 
 	private Settings $settings;
-	private GoogleClient $client;
-	private GoogleTokenStore $tokens;
-	private CalendarSyncService $sync;
+	private GraphClient $client;
+	private MicrosoftTokenStore $tokens;
+	private OutlookSyncService $sync;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param Settings            $settings Settings store.
-	 * @param GoogleClient        $client   Google client.
-	 * @param GoogleTokenStore    $tokens   Token store.
-	 * @param CalendarSyncService $sync     Sync service.
+	 * @param GraphClient         $client   Graph client.
+	 * @param MicrosoftTokenStore $tokens   Token store.
+	 * @param OutlookSyncService  $sync     Sync service.
 	 */
-	public function __construct( Settings $settings, GoogleClient $client, GoogleTokenStore $tokens, CalendarSyncService $sync ) {
+	public function __construct( Settings $settings, GraphClient $client, MicrosoftTokenStore $tokens, OutlookSyncService $sync ) {
 		$this->settings = $settings;
 		$this->client   = $client;
 		$this->tokens   = $tokens;
@@ -54,7 +54,7 @@ final class GoogleCalendarController extends AbstractController {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/integrations/google',
+			'/integrations/microsoft',
 			array(
 				array(
 					'methods'             => 'GET',
@@ -71,7 +71,7 @@ final class GoogleCalendarController extends AbstractController {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/integrations/google/connect',
+			'/integrations/microsoft/connect',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'connect' ),
@@ -81,7 +81,7 @@ final class GoogleCalendarController extends AbstractController {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/integrations/google/(?P<staff>\d+)/disconnect',
+			'/integrations/microsoft/(?P<staff>\d+)/disconnect',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'disconnect' ),
@@ -91,7 +91,7 @@ final class GoogleCalendarController extends AbstractController {
 
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/integrations/google/(?P<staff>\d+)/sync',
+			'/integrations/microsoft/(?P<staff>\d+)/sync',
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'sync' ),
@@ -99,10 +99,9 @@ final class GoogleCalendarController extends AbstractController {
 			)
 		);
 
-		// OAuth redirect target — public, but the signed state is verified.
 		register_rest_route(
 			self::REST_NAMESPACE,
-			'/integrations/google/callback',
+			'/integrations/microsoft/callback',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( $this, 'callback' ),
@@ -126,7 +125,7 @@ final class GoogleCalendarController extends AbstractController {
 	}
 
 	/**
-	 * Save the Google app credentials (secret only overwritten when supplied).
+	 * Save the Microsoft app credentials (secret only overwritten when supplied).
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response
@@ -134,38 +133,39 @@ final class GoogleCalendarController extends AbstractController {
 	public function save_app( WP_REST_Request $request ): WP_REST_Response {
 		$body         = (array) $request->get_json_params();
 		$integrations = (array) $this->settings->get( 'integrations', array() );
-		$google       = (array) ( $integrations['google'] ?? array() );
+		$microsoft    = (array) ( $integrations['microsoft'] ?? array() );
 
 		if ( array_key_exists( 'client_id', $body ) ) {
-			$google['client_id'] = sanitize_text_field( (string) $body['client_id'] );
+			$microsoft['client_id'] = sanitize_text_field( (string) $body['client_id'] );
+		}
+		if ( array_key_exists( 'tenant', $body ) ) {
+			$microsoft['tenant'] = sanitize_text_field( (string) $body['tenant'] );
 		}
 		if ( ! empty( $body['client_secret'] ) ) {
-			$google['client_secret'] = sanitize_text_field( (string) $body['client_secret'] );
+			$microsoft['client_secret'] = sanitize_text_field( (string) $body['client_secret'] );
 		}
-		$integrations['google'] = $google;
+		$integrations['microsoft'] = $microsoft;
 		$this->settings->set( 'integrations', $integrations );
 
 		return $this->status();
 	}
 
 	/**
-	 * Return the Google consent URL for a staff member.
+	 * Return the Microsoft consent URL for a staff member.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|\WP_Error
 	 */
 	public function connect( WP_REST_Request $request ) {
 		if ( ! $this->client->is_configured() ) {
-			return $this->error( 'bookora_not_configured', __( 'Add your Google app credentials first.', 'bookora' ), 422 );
+			return $this->error( 'bookora_not_configured', __( 'Add your Microsoft app credentials first.', 'bookora' ), 422 );
 		}
 		$staff_id = (int) $request->get_param( 'staff_id' );
 		if ( $staff_id <= 0 ) {
 			return $this->error( 'bookora_invalid', __( 'A staff member is required.', 'bookora' ), 422 );
 		}
 
-		$url = $this->client->auth_url( OAuthState::sign( $staff_id ), $this->redirect_uri() );
-
-		return $this->success( array( 'auth_url' => $url ) );
+		return $this->success( array( 'auth_url' => $this->client->auth_url( OAuthState::sign( $staff_id ), $this->redirect_uri() ) ) );
 	}
 
 	/**
@@ -189,7 +189,7 @@ final class GoogleCalendarController extends AbstractController {
 		$tokens['calendar_id'] = 'primary';
 		$this->tokens->store( $staff_id, $tokens );
 
-		wp_safe_redirect( admin_url( 'admin.php?page=bookora-integrations&google=connected' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=bookora-integrations&outlook=connected' ) );
 		exit;
 	}
 
@@ -223,6 +223,6 @@ final class GoogleCalendarController extends AbstractController {
 	 * @return string
 	 */
 	private function redirect_uri(): string {
-		return rest_url( self::REST_NAMESPACE . '/integrations/google/callback' );
+		return rest_url( self::REST_NAMESPACE . '/integrations/microsoft/callback' );
 	}
 }

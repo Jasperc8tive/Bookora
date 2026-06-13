@@ -13,6 +13,7 @@ use Bookora\Database\Migrations\Migration_0001_InitialSchema;
 use Bookora\Database\Migrations\Migration_0002_ServiceCategories;
 use Bookora\Database\Migrations\Migration_0003_StaffServices;
 use Bookora\Database\Migrations\Migration_0004_BookingHolds;
+use Bookora\Database\Migrations\Migration_0005_ExternalEventIds;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -48,6 +49,7 @@ class MigrationRunner {
 		Migration_0002_ServiceCategories::class,
 		Migration_0003_StaffServices::class,
 		Migration_0004_BookingHolds::class,
+		Migration_0005_ExternalEventIds::class,
 	);
 
 	/**
