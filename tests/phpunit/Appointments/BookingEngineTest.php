@@ -16,7 +16,6 @@ use Bookora\Appointments\BookingHoldRepository;
 use Bookora\Appointments\Clock;
 use Bookora\Appointments\ConflictDetector;
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Security\ActivityLogger;
@@ -36,7 +35,6 @@ class BookingEngineTest extends WP_UnitTestCase {
 
 	private const DATE = '2030-06-12'; // A fixed future date.
 
-	private MigrationRunner $runner;
 	private Schema $schema;
 	private ServiceRepository $services;
 	private StaffRepository $staff;
@@ -47,8 +45,6 @@ class BookingEngineTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$this->schema            = new Schema();
 		$this->services          = new ServiceRepository( null, $this->schema );
@@ -60,7 +56,6 @@ class BookingEngineTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

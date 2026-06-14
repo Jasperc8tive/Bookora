@@ -34,10 +34,10 @@ class UninstallTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		// Uninstall drops tables via DDL (auto-commit); recreate the schema so
-		// later test classes find their tables.
-		$this->runner->migrate();
-		delete_option( 'bookora_settings' );
+		// Uninstall removes schema, roles AND options. Fully restore via the
+		// production activation path so later test classes find a canonical
+		// Bookora environment (matching the one bootstrap.php builds).
+		\Bookora\Core\Activator::activate();
 		parent::tear_down();
 	}
 

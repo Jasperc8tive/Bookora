@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Bookora\Tests\Security;
 
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Security\ActivityLogger;
@@ -21,21 +20,17 @@ use WP_UnitTestCase;
  */
 class ActivityLoggerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private AuditLogRepository $repo;
 	private ActivityLogger $logger;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$this->repo   = new AuditLogRepository( null, new Schema() );
 		$this->logger = new ActivityLogger( $this->repo );
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

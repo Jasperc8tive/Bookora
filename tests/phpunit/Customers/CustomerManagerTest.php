@@ -12,7 +12,6 @@ namespace Bookora\Tests\Customers;
 use Bookora\Customers\CustomerManager;
 use Bookora\Customers\CustomerRepository;
 use Bookora\Customers\NoteRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Security\ActivityLogger;
@@ -26,13 +25,10 @@ use WP_UnitTestCase;
  */
 class CustomerManagerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private CustomerManager $manager;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema        = new Schema();
 		$audit_repo    = new AuditLogRepository( null, $schema );
@@ -45,7 +41,6 @@ class CustomerManagerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

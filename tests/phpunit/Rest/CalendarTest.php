@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Bookora\Tests\Rest;
 
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Security\Roles;
 use Bookora\Services\ServiceRepository;
@@ -28,15 +27,12 @@ class CalendarTest extends WP_UnitTestCase {
 
 	private const DATE = '2030-06-12';
 
-	private MigrationRunner $runner;
 	private int $service_id;
 	private int $staff_id;
 	private int $customer_id;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 		( new Roles() )->install();
 
 		$schema      = new Schema();
@@ -65,7 +61,6 @@ class CalendarTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

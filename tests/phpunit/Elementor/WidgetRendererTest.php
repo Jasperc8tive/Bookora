@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Bookora\Tests\Elementor;
 
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Elementor\WidgetRenderer;
 use Bookora\Services\ServiceRepository;
@@ -21,15 +20,12 @@ use WP_UnitTestCase;
  */
 class WidgetRendererTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private WidgetRenderer $renderer;
 	private ServiceRepository $services;
 	private StaffRepository $staff;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema         = new Schema();
 		$this->services = new ServiceRepository( null, $schema );
@@ -38,7 +34,6 @@ class WidgetRendererTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Bookora\Tests\Staff;
 
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Security\ActivityLogger;
@@ -28,15 +27,12 @@ use WP_UnitTestCase;
  */
 class StaffManagerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private StaffManager $staff;
 	private AvailabilityManager $availability;
 	private StaffServiceRepository $assignments;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema            = new Schema();
 		$audit             = new ActivityLogger( new AuditLogRepository( null, $schema ) );
@@ -47,7 +43,6 @@ class StaffManagerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

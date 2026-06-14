@@ -11,7 +11,6 @@ namespace Bookora\Tests\Reports;
 
 use Bookora\Appointments\AppointmentRepository;
 use Bookora\Appointments\Clock;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Reports\ReportService;
 use Bookora\Staff\AvailabilityRepository;
@@ -23,14 +22,11 @@ use WP_UnitTestCase;
  */
 class ReportServiceTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private ReportService $reports;
 	private AppointmentRepository $appointments;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema             = new Schema();
 		$this->appointments = new AppointmentRepository( null, $schema );
@@ -38,7 +34,6 @@ class ReportServiceTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -12,7 +12,6 @@ namespace Bookora\Tests\Payments;
 use Bookora\Appointments\AppointmentRepository;
 use Bookora\Core\Settings;
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Payments\GatewayRegistry;
@@ -31,7 +30,6 @@ use WP_UnitTestCase;
  */
 class PaymentManagerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private PaymentManager $manager;
 	private PaymentRepository $payments;
 	private AppointmentRepository $appointments;
@@ -40,8 +38,6 @@ class PaymentManagerTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema             = new Schema();
 		$this->payments     = new PaymentRepository( null, $schema );
@@ -75,7 +71,6 @@ class PaymentManagerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

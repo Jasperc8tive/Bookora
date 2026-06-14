@@ -15,7 +15,6 @@ use Bookora\Appointments\BookingEngine;
 use Bookora\Appointments\Clock;
 use Bookora\Core\Settings;
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Portal\PortalManager;
 use Bookora\Portal\PortalToken;
@@ -28,7 +27,6 @@ use WP_UnitTestCase;
  */
 class PortalManagerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private PortalManager $portal;
 	private CustomerRepository $customers;
 	private AppointmentRepository $appointments;
@@ -37,8 +35,6 @@ class PortalManagerTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema             = new Schema();
 		$this->customers    = new CustomerRepository( null, $schema );
@@ -51,7 +47,6 @@ class PortalManagerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

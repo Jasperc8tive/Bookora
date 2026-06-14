@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Bookora\Tests\Services;
 
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\Core\Settings;
@@ -29,7 +28,6 @@ use WP_UnitTestCase;
  */
 class ServiceManagerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private ServiceManager $services;
 	private CategoryManager $categories;
 	private ServiceRepository $serviceRepo;
@@ -37,8 +35,6 @@ class ServiceManagerTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema             = new Schema();
 		$this->serviceRepo  = new ServiceRepository( null, $schema );
@@ -51,7 +47,6 @@ class ServiceManagerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Bookora\Tests\Rest;
 
-use Bookora\Database\MigrationRunner;
 use Bookora\Security\Roles;
 use WP_REST_Request;
 use WP_UnitTestCase;
@@ -20,13 +19,8 @@ use WP_UnitTestCase;
  */
 class SystemControllerTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
-
 	public function set_up(): void {
 		parent::set_up();
-
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		// Grant the administrator the bookora_manage_settings capability.
 		( new Roles() )->install();
@@ -36,7 +30,6 @@ class SystemControllerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -12,7 +12,6 @@ namespace Bookora\Tests\Integrations;
 use Bookora\Appointments\AvailabilityEngine;
 use Bookora\Appointments\Clock;
 use Bookora\Core\Settings;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Integrations\Google\GoogleClient;
 use Bookora\Integrations\Google\GoogleTokenStore;
@@ -32,16 +31,11 @@ use WP_UnitTestCase;
  */
 class GoogleCalendarTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
-
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

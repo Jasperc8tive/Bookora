@@ -10,7 +10,6 @@ declare(strict_types=1);
 namespace Bookora\Tests\Rest;
 
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Services\ServiceRepository;
 use Bookora\Staff\AvailabilityRepository;
@@ -26,14 +25,11 @@ class PublicBookingControllerTest extends WP_UnitTestCase {
 
 	private const DATE = '2030-06-12';
 
-	private MigrationRunner $runner;
 	private int $service_id;
 	private int $staff_id;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema      = new Schema();
 		$services    = new ServiceRepository( null, $schema );
@@ -60,7 +56,6 @@ class PublicBookingControllerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -13,7 +13,6 @@ use Bookora\Appointments\AppointmentRepository;
 use Bookora\Appointments\Clock;
 use Bookora\Core\Settings;
 use Bookora\Customers\CustomerRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Schema;
 use Bookora\Notifications\ChannelRegistry;
 use Bookora\Notifications\ContextBuilder;
@@ -33,7 +32,6 @@ use WP_UnitTestCase;
  */
 class NotificationDispatcherTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private NotificationDispatcher $dispatcher;
 	private NotificationRepository $log;
 	private FakeChannel $channel;
@@ -41,8 +39,6 @@ class NotificationDispatcherTest extends WP_UnitTestCase {
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 
 		$schema    = new Schema();
 		$settings  = new Settings();
@@ -83,7 +79,6 @@ class NotificationDispatcherTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -15,7 +15,6 @@ use Bookora\Coupons\CouponRepository;
 use Bookora\Customers\CustomerManager;
 use Bookora\Customers\CustomerRepository;
 use Bookora\Customers\NoteRepository;
-use Bookora\Database\MigrationRunner;
 use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\GiftCards\GiftCardManager;
@@ -40,20 +39,16 @@ use WP_UnitTestCase;
  */
 class AdvancedFeaturesTest extends WP_UnitTestCase {
 
-	private MigrationRunner $runner;
 	private Schema $schema;
 	private ActivityLogger $audit;
 
 	public function set_up(): void {
 		parent::set_up();
-		$this->runner = new MigrationRunner();
-		$this->runner->migrate();
 		$this->schema = new Schema();
 		$this->audit  = new ActivityLogger( new AuditLogRepository( null, $this->schema ) );
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
 		parent::tear_down();
 	}
 

@@ -51,7 +51,10 @@ class MigrationRunnerTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		$this->runner->rollback();
+		// This class owns its schema (it tests migrate/rollback). Leave the
+		// canonical, fully-migrated schema in place so later test classes — which
+		// rely on the suite-wide schema built in bootstrap.php — are unaffected.
+		$this->runner->migrate();
 		parent::tear_down();
 	}
 

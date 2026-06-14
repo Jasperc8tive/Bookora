@@ -38,3 +38,15 @@ tests_add_filter(
 );
 
 require $bookora_tests_dir . '/includes/bootstrap.php';
+
+/*
+ * Initialise Bookora once for the whole suite, exactly as production does on
+ * plugin activation: build the schema (MigrationRunner), install roles, and seed
+ * default settings. This runs after WordPress is fully loaded and BEFORE any
+ * test's isolation transaction, so the committed schema persists for every test.
+ *
+ * Individual tests therefore no longer create/destroy the schema themselves —
+ * per-test data is rolled back by WP_UnitTestCase's transaction, mirroring the
+ * production model where the schema is stable and only data changes.
+ */
+\Bookora\Core\Activator::activate();
