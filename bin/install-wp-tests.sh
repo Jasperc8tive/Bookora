@@ -67,13 +67,6 @@ install_wp() {
 }
 
 install_test_suite() {
-	# Portable in-place sed.
-	if [[ $(uname -s) == 'Darwin' ]]; then
-		local ioption='-i .bak'
-	else
-		local ioption='-i'
-	fi
-
 	if [ ! -d "$WP_TESTS_DIR" ]; then
 		mkdir -p "$WP_TESTS_DIR"
 		svn export --quiet "https://develop.svn.wordpress.org/tags/${WP_VERSION_TAG}/tests/phpunit/includes/" "$WP_TESTS_DIR/includes" 2>/dev/null \
@@ -82,24 +75,26 @@ install_test_suite() {
 			|| svn export --quiet "https://develop.svn.wordpress.org/trunk/tests/phpunit/data/" "$WP_TESTS_DIR/data"
 	fi
 
-	if [ ! -f "$WP_TESTS_DIR/wp-tests-config.php" ]; then
-		download "https://develop.svn.wordpress.org/tags/${WP_VERSION_TAG}/wp-tests-config-sample.php" "$WP_TESTS_DIR/wp-tests-config.php" \
-			|| download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" "$WP_TESTS_DIR/wp-tests-config.php"
-		local cfg="$WP_TESTS_DIR/wp-tests-config.php"
-		# shellcheck disable=SC2086
-		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" "$cfg"
-		# Replace each DB define deterministically (independent of the sample's
-		# placeholder text), so DB_HOST is never left as the default 'localhost'
-		# (which makes mysqli try a non-existent unix socket).
-		# shellcheck disable=SC2086
-		sed $ioption "s/define( *'DB_NAME'.*/define( 'DB_NAME', '${DB_NAME}' );/" "$cfg"
-		# shellcheck disable=SC2086
-		sed $ioption "s/define( *'DB_USER'.*/define( 'DB_USER', '${DB_USER}' );/" "$cfg"
-		# shellcheck disable=SC2086
-		sed $ioption "s/define( *'DB_PASSWORD'.*/define( 'DB_PASSWORD', '${DB_PASS}' );/" "$cfg"
-		# shellcheck disable=SC2086
-		sed $ioption "s/define( *'DB_HOST'.*/define( 'DB_HOST', '${DB_HOST}' );/" "$cfg"
-	fi
+	# Generate the test config deterministically rather than downloading and
+	# patching the sample (a silent 404 on the sample would leave DB_HOST as the
+	# default 'localhost', making mysqli attempt a non-existent unix socket).
+	cat >"$WP_TESTS_DIR/wp-tests-config.php" <<PHP
+<?php
+define( 'ABSPATH', '$WP_CORE_DIR/' );
+define( 'WP_DEFAULT_THEME', 'default' );
+define( 'DB_NAME', '$DB_NAME' );
+define( 'DB_USER', '$DB_USER' );
+define( 'DB_PASSWORD', '$DB_PASS' );
+define( 'DB_HOST', '$DB_HOST' );
+define( 'DB_CHARSET', 'utf8' );
+define( 'DB_COLLATE', '' );
+\$table_prefix = 'wptests_';
+define( 'WP_TESTS_DOMAIN', 'example.org' );
+define( 'WP_TESTS_EMAIL', 'admin@example.org' );
+define( 'WP_TESTS_TITLE', 'Bookora Test Suite' );
+define( 'WP_PHP_BINARY', 'php' );
+define( 'WPLANG', '' );
+PHP
 }
 
 install_db() {
