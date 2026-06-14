@@ -16,7 +16,7 @@
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
 | Current stage | **FINAL — Production Release Audit (v1.0.0)** |
-| Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
+| Stage status | **✅ APPROVED — v1.0.0 release-ready (CI PHPUnit gate before tag)** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-14 |
 
