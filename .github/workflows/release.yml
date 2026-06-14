@@ -1,0 +1,102 @@
+name: Production Release
+
+# GA semver tags only (v1.2.3), never pre-releases (…-rc…). RC tags are handled
+# by rc-validation.yml. The full CI gate must be green before any release asset
+# is built or published.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    name: Full CI (release gate)
+    uses: ./.github/workflows/ci.yml
+
+  security-scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, openssl, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer install (production only)
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+
+      - name: Composer audit (production dependencies)
+        run: composer audit --format=plain
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: NPM install
+        run: npm ci
+
+      - name: NPM audit (fail on high/critical, shipped deps)
+        run: npm audit --omit=dev --audit-level=high
+
+  release:
+    name: Build, validate & publish release assets
+    needs: [ci, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, openssl, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Verify version matches tag
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          FILE_VERSION="$(grep -oE "BOOKORA_VERSION', '[^']+'" bookora.php | grep -oE "[0-9][^']*")"
+          echo "Tag: $TAG  |  bookora.php: $FILE_VERSION"
+          if [ "$TAG" != "$FILE_VERSION" ]; then
+            echo "::error::Tag ($TAG) does not match BOOKORA_VERSION ($FILE_VERSION)."
+            exit 1
+          fi
+
+      - name: Build release package
+        run: bash bin/build-release.sh
+
+      - name: Validate package contents
+        run: bash bin/validate-package.sh dist/bookora.zip
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum bookora.zip > bookora.zip.sha256
+
+      - name: Publish GitHub release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/bookora.zip
+            dist/bookora.zip.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true

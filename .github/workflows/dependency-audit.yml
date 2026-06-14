@@ -1,0 +1,69 @@
+name: Dependency Audit
+
+# Weekly supply-chain audit of PHP (Composer) and JS (NPM) dependencies.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Composer & NPM audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer install (production only)
+        run: composer install --no-dev --prefer-dist --no-progress --no-interaction
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: NPM install
+        run: npm ci
+
+      - name: Generate security report
+        run: |
+          mkdir -p reports
+          {
+            echo "# Bookora Dependency Audit"
+            echo "_Generated: $(date -u '+%Y-%m-%d %H:%M UTC')_"
+            echo
+            echo "## Composer (production)"
+            echo '```'
+            composer audit --format=plain 2>&1 || echo "Composer vulnerabilities found (see above)."
+            echo '```'
+            echo
+            echo "## NPM (shipped dependencies)"
+            echo '```'
+            npm audit --omit=dev 2>&1 || echo "NPM vulnerabilities found (see above)."
+            echo '```'
+          } | tee reports/security-report.md
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: reports/security-report.md
+          retention-days: 90
+
+      - name: Fail on production Composer vulnerabilities
+        run: composer audit --format=plain
+
+      - name: Fail on high/critical NPM vulnerabilities
+        run: npm audit --omit=dev --audit-level=high

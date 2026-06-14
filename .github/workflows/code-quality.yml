@@ -1,0 +1,88 @@
+name: Code Quality Report
+
+# Generates PHPCS, PHPStan, PHPUnit-coverage and Jest-coverage reports and
+# publishes them as downloadable artifacts. Does not gate merges (CI does that);
+# this surfaces trends and coverage.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reports:
+    name: Quality reports & coverage
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: wordpress_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      WP_TESTS_PHPUNIT_POLYFILLS_PATH: ${{ github.workspace }}/vendor/yoast/phpunit-polyfills
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP (with pcov coverage)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, openssl, mbstring
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Composer install
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare reports directory
+        run: mkdir -p reports
+
+      - name: PHPCS report (full + checkstyle)
+        run: |
+          composer phpcs -- --report=full --report-file=reports/phpcs-full.txt || true
+          composer phpcs -- --report=checkstyle --report-file=reports/phpcs-checkstyle.xml || true
+
+      - name: PHPStan report
+        run: composer phpstan -- --error-format=table > reports/phpstan.txt || true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: NPM install
+        run: npm ci
+
+      - name: Jest coverage
+        run: npm test -- --coverage --coverageDirectory=reports/jest-coverage
+
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Install WordPress test library
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1:3306 latest true
+
+      - name: PHPUnit coverage (clover + html)
+        run: vendor/bin/phpunit --coverage-clover reports/coverage-clover.xml --coverage-html reports/php-coverage
+
+      - name: Publish quality reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-reports
+          path: reports/
+          retention-days: 30

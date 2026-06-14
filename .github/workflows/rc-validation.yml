@@ -1,0 +1,60 @@
+name: RC Validation
+
+# Release-candidate tags (e.g. v1.0.0-rc2): run the full CI gate, then build,
+# validate, and publish the distributable plugin ZIP as a workflow artifact.
+on:
+  push:
+    tags:
+      - '*-rc*'
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Full CI
+    uses: ./.github/workflows/ci.yml
+
+  package:
+    name: Build & validate package
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, openssl, mbstring
+          coverage: none
+          tools: composer:v2
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Build release package
+        run: bash bin/build-release.sh
+
+      - name: Validate package contents
+        run: bash bin/validate-package.sh dist/bookora.zip
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum bookora.zip > bookora.zip.sha256
+          cat bookora.zip.sha256
+
+      - name: Upload artifact (bookora.zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookora-${{ github.ref_name }}
+          path: |
+            dist/bookora.zip
+            dist/bookora.zip.sha256
+          retention-days: 30
+          if-no-files-found: error
