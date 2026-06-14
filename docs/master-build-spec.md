@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 18 — Commercial Hardening** |
+| Current stage | **FINAL — Production Release Audit (v1.0.0)** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-14 |
@@ -84,10 +84,25 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **15** | Reporting & Analytics | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
 | **16** | Advanced Features (waitlist, coupons, memberships, resources) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
 | **17** | AI Scheduling | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
-| **18** | Commercial Hardening (licensing, updater, white-label) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| Final | Production Release Audit | Not started | — |
+| **18** | Commercial Hardening (licensing, updater, white-label) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
+| **Final** | Production Release Audit (v1.0.0) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Final Stage Artifact Index (Production Release · v1.0.0)
+
+Version bumped to **1.0.0** (`bookora.php`, `BOOKORA_VERSION`, `package.json`, `readme.txt`). Full documentation set + release packaging. Final go/no-go in [`docs/final-release/`](final-release/):
+
+| Artifact | File |
+|---|---|
+| **Production Release Audit (GO)** | [production-release-audit.md](final-release/production-release-audit.md) |
+| User guide | [user-guide.md](guides/user-guide.md) |
+| Installation & upgrade | [installation-upgrade.md](guides/installation-upgrade.md) |
+| Developer guide | [developer-guide.md](guides/developer-guide.md) |
+| Hooks reference | [hooks.md](reference/hooks.md) |
+| REST API reference | [rest-api.md](reference/rest-api.md) |
+| Release packaging | [.distignore](../.distignore) · [bin/build-release.sh](../bin/build-release.sh) |
+| End-user readme (wp.org) | [readme.txt](../readme.txt) |
 
 ### Stage 18 Artifact Index
 
@@ -376,6 +391,7 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-14 | Stage 18 **APPROVED** + pushed. **FINAL STAGE (Production Release Audit) built & audited → v1.0.0**: whole-repo re-verification (PHPCS 155/155, PHPStan L6, ESLint, Jest 14 suites/21 tests, build all green; 163 PHPUnit methods/36 files for CI); consolidated cross-stage **security** audit (ABSPATH guards on every file, prepared SQL, capability-gated REST, nonce/portal-token auth, AES-256-GCM secrets, hash-chained audit log, SAQ-A payments, opt-in telemetry, protected dirs, confirm-gated destructive ops) and **performance** audit (composite indexes, no N+1, single autoloaded option, cached external calls, async cron, code-split bundles, concurrency-safe holds) — **no blocking defects**. Version bumped to 1.0.0 across all manifests. Full documentation set written (user guide, installation/upgrade, developer guide, hooks reference, REST API reference) + wp.org `readme.txt` rewritten. Release packaging added (`.distignore` + `bin/build-release.sh` → clean `dist/bookora.zip`). **Decision: GO for 1.0.0**; the only gating pre-tag action is a green PHPUnit run in CI (infrastructure-dependent). Awaiting final approval. |
 | 2026-06-14 | Stage 17 **APPROVED** + pushed. **Stage 18 (Commercial Hardening) built & audited**: `LicenseManager` (activate/deactivate/check vs. filterable remote server, AES-256-GCM key at rest, cached status + offline grace, daily re-check cron); `FeatureFlags` (`free`/`pro`/`agency` tiers, per-site overrides, `bookora_feature_enabled` kill-switch filter); self-hosted license-aware `Updater` (`pre_set_site_transient_update_plugins` + `plugins_api`, 12h cache); opt-in anonymised `Telemetry` (weekly cron, one-way site hash, no PII, `bookora_telemetry_payload`); agency `WhiteLabel` (renames admin menu + Plugins row, branding to SPA via `bookora_admin_data`); `DataPortability` (dynamic `bkra_` discovery → portable JSON import/export) + `BackupManager` (protected uploads dir, create/list/restore/delete); `CommercialController` (14 routes gated `bookora_manage_settings`, destructive ops require `confirm`); `CommercialServiceProvider` (crons + updater/branding hooks); **License & Tools** admin screen; `Deactivator` clears all six crons, `Uninstaller` drops `bookora_license` + update transient. All remote endpoints empty by default (zero outbound calls). Decision D-028. PHPStan L6 (whole app)/PHPCS (155/155)/ESLint green; Jest 14 suites/21 tests; +5 PHPUnit cases (CI); build OK. Awaiting approval to enter the Final Stage (Production Release Audit). |
 | 2026-06-14 | Stage 16 **APPROVED** + pushed. **Stage 17 (AI Scheduling) built & audited**: pluggable `SlotScorer` contract + dependency-free `HeuristicScorer` (time-of-day preference + packing/adjacency + soonest-date bonuses); `SchedulingIntelligence` — `suggest()` (ranked open slots over a bounded date range, scored + re-ranked through the new **`bookora_slot_score`** filter), `auto_assign()` (least-loaded eligible staff, tie→lowest id), `forecast()` (weekday-average demand baseline over booking history projected N days), `workload()` (per-staff upcoming load); `SchedulingController` (`/scheduling/{suggestions,auto-assign,forecast,workload}`, gated `bookora_manage_bookings`, validated/clamped inputs); `SchedulingServiceProvider` (registered in `Plugin.php`); new **AI Scheduling** admin screen (forecast bars, workload bars, suggestion tool) + nav/menu/assets wiring. Decision D-027. PHPStan L6 (whole app)/PHPCS/ESLint green; Jest 13 suites/17 tests; +4 PHPUnit cases (CI); build OK. `auto_assign` exposed as an API/admin aid (not yet wired into booking-create); forecast is a baseline (no seasonality/per-service split) — both upgradeable behind the filter. Awaiting approval to enter Stage 18 (Commercial Hardening). |
 | 2026-06-14 | Stage 15 **APPROVED** + pushed. **Stage 16 (Advanced Features) built & audited**: migration 0006 (coupons/gift_cards/memberships/customer_memberships); six DDD modules — Coupons (validate/redeem with min/limit/expiry), GiftCards (issue/balance/atomic debit), Memberships+Subscriptions (plans/enrol/discount/daily renewal cron), Waitlist (join + promote-on-cancel), Resources (CRUD + capacity-aware is_free); `AdvancedController` (admin CRUD + public coupon-validate/gift-card-balance/waitlist-join), `AdvancedServiceProvider` (DI + subscriber + cron), tabbed React Advanced admin. PHPStan/PHPCS/ESLint green; Jest 15/15; +5 PHPUnit cases (CI); build OK. Discount→charge wiring + resource-aware scheduling are documented follow-ups (kept out of the tested money path). Awaiting approval to enter Stage 17 (AI Scheduling). |

@@ -1,0 +1,47 @@
+# Files & directories excluded from the distributable plugin ZIP.
+# Anything listed here is development-only and never ships to users.
+
+# VCS / CI
+.git
+.github
+.gitignore
+.gitattributes
+
+# Local harness / editor state
+.claude
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Sources & tooling (the built bundle in assets/build/ DOES ship)
+assets/src
+node_modules
+package.json
+package-lock.json
+tsconfig.json
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+.eslintrc.cjs
+.eslintrc.js
+jest.config.js
+
+# PHP dev tooling & tests
+tests
+phpunit.xml.dist
+phpcs.xml.dist
+phpstan.neon.dist
+composer.lock
+.phpunit.result.cache
+.phpcs.cache
+coverage
+
+# Docs & specs (kept in the repo, not shipped)
+docs
+
+# Build/packaging artifacts
+dist
+bin
+.distignore
+*.log

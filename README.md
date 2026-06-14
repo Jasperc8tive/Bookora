@@ -2,7 +2,21 @@
 
 Premium WordPress appointment-booking platform — **Paystack-native, Flutterwave-native, WhatsApp-native, Elementor-first**, and fast enough for a 3G connection.
 
-> **Status:** Stage 1 — Project Foundation. See [`docs/master-build-spec.md`](docs/master-build-spec.md) for the full stage-gated roadmap and decision log.
+> **Status:** **v1.0.0 — production release.** All 18 build stages complete and audited. See [`docs/master-build-spec.md`](docs/master-build-spec.md) for the full stage-gated history and decision log, and [`docs/final-release/production-release-audit.md`](docs/final-release/production-release-audit.md) for the release go/no-go.
+
+## Features
+
+Booking engine (conflict-free, holds) · services/staff/customers · front-end booking wizard · admin calendar · payments (Paystack/Flutterwave/Stripe, webhook-authoritative) · notifications (email/SMS/WhatsApp/push) · two-way Google & Outlook calendar sync · Elementor widgets · stateless magic-link customer portal · reporting + CSV export · coupons/gift cards/memberships/resources/waitlist · AI scheduling (suggestions/auto-assign/forecast) · commercial hardening (licensing, updater, telemetry, white-label, import/export, backup/restore).
+
+## Documentation
+
+| Doc | Purpose |
+|---|---|
+| [User guide](docs/guides/user-guide.md) | Configure and operate Bookora |
+| [Installation & upgrade](docs/guides/installation-upgrade.md) | Install, activate, update, uninstall |
+| [Developer guide](docs/guides/developer-guide.md) | Architecture, modules, extending Bookora |
+| [Hooks reference](docs/reference/hooks.md) | All actions & filters |
+| [REST API reference](docs/reference/rest-api.md) | Namespace `bookora/v1` endpoints |
 
 ## Tech stack
 
@@ -13,6 +27,7 @@ Premium WordPress appointment-booking platform — **Paystack-native, Flutterwav
 | Architecture | DDD `app/` tree, DI container, repository pattern, migration system |
 | Standards | PSR-12 + WordPress Coding Standards, PHPStan |
 | Tests | PHPUnit (+ WP test library), Jest |
+| Commercial | License tiers, self-hosted updater, opt-in telemetry, white-label |
 
 ## Layout
 

@@ -6,6 +6,7 @@ composer-setup.php
 
 # Build output
 /assets/build/
+/dist/
 
 # Tooling caches
 .phpunit.result.cache
