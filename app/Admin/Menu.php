@@ -155,6 +155,15 @@ final class Menu {
 
 		add_submenu_page(
 			self::SLUG,
+			__( 'AI Scheduling', 'bookora' ),
+			__( 'AI Scheduling', 'bookora' ),
+			Capabilities::MANAGE_BOOKINGS,
+			self::SLUG . '-scheduling',
+			array( $this->dashboard, 'render' )
+		);
+
+		add_submenu_page(
+			self::SLUG,
 			__( 'Advanced', 'bookora' ),
 			__( 'Advanced', 'bookora' ),
 			Capabilities::MANAGE_SETTINGS,

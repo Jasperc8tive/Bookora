@@ -15,7 +15,7 @@
 | Primary market | **Africa-first (Nigeria lead) → global** |
 | Secondary market | Global SMB / Western (Calendly/Amelia displacement) |
 | Repo | `c:\Bookora` |
-| Current stage | **STAGE 16 — Advanced Features** |
+| Current stage | **STAGE 17 — AI Scheduling** |
 | Stage status | **BUILD COMPLETE → AWAITING APPROVAL** |
 | Doc owner | Cross-functional team (Architect, PM, Eng, Security, Growth) |
 | Last updated | 2026-06-14 |
@@ -54,6 +54,7 @@ Decisions here are **load-bearing**. Changing one requires a changelog entry and
 | D-024 | Calendar sync = **per-staff OAuth** (`integrations` key `google_{id}`), tokens **encrypted at rest** (AES-256-GCM); external busy feeds availability via a **cached** `bookora_external_busy` filter (never a live call) | Per-staff calendars + security + availability stays fast/resilient to provider outages. | 2026-06-13 | 11 |
 | D-025 | Calendar providers share one engine: `CalendarClient` interface + `AbstractCalendarSync` + `AbstractTokenStore` + `OAuthState`; appointments hold a **`external_ids` JSON map** (provider→event id) | DRY across Google/Outlook; one appointment can sync to multiple calendars without collision. | 2026-06-13 | 12 |
 | D-026 | Customer portal auth = **stateless HMAC magic-link bearer token** (`PortalToken`, customer id + expiry), sent via `X-Bookora-Portal-Token`; every action re-checks ownership + reschedule/cancel windows | Customers aren't WP users; no server sessions; least-privilege own-data access. | 2026-06-13 | 14 |
+| D-027 | AI scheduling uses a **pluggable `SlotScorer` contract** (default `HeuristicScorer`) over the real `AvailabilityEngine`, with every slot score passed through the **`bookora_slot_score` filter**; forecasting is a weekday-average baseline over booking history | Ships smart scheduling with **no external AI dependency** while leaving a clean seam to drop in a Claude-API/ML scorer later without changing callers. | 2026-06-14 | 17 |
 
 ---
 
@@ -80,12 +81,24 @@ Methodology: **Build → Test → Audit → Fix → Retest → Approve**. No sta
 | **13** | Elementor Integration | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
 | **14** | Customer Portal | **COMPLETE — Audited** | ✅ APPROVED 2026-06-13 |
 | **15** | Reporting & Analytics | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
-| **16** | Advanced Features (waitlist, coupons, memberships, resources) | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
-| 17 | AI Scheduling | Not started | — |
+| **16** | Advanced Features (waitlist, coupons, memberships, resources) | **COMPLETE — Audited** | ✅ APPROVED 2026-06-14 |
+| **17** | AI Scheduling | **BUILD COMPLETE — Audited** | ⏳ AWAITING APPROVAL |
 | 18 | Commercial Hardening (licensing, updater, white-label) | Not started | — |
 | Final | Production Release Audit | Not started | — |
 
 > The 18-stage roadmap above is **authoritative** (decision D-012). Each stage follows Build → Test → Audit → Fix → Re-test → Approve and must not proceed without explicit approval.
+
+### Stage 17 Artifact Index
+
+Code in [`app/Scheduling/`](../app/Scheduling/); REST in [`app/API/Controllers/SchedulingController.php`](../app/API/Controllers/SchedulingController.php); UI in [`assets/src/admin/components/scheduling/`](../assets/src/admin/components/scheduling/). Smart suggestions/auto-assign/forecast/workload over `AvailabilityEngine` + booking history; `bookora_slot_score` filter (D-027). Stage docs in [`docs/stage-17-ai-scheduling/`](stage-17-ai-scheduling/):
+
+| Artifact | File |
+|---|---|
+| Stage 17 Audit & Plugin Audit Report | [stage-audit.md](stage-17-ai-scheduling/stage-audit.md) |
+| Scorer contract + heuristic | [SlotScorer.php](../app/Scheduling/SlotScorer.php) · [HeuristicScorer.php](../app/Scheduling/HeuristicScorer.php) |
+| Intelligence service | [SchedulingIntelligence.php](../app/Scheduling/SchedulingIntelligence.php) |
+| REST + provider | [SchedulingController.php](../app/API/Controllers/SchedulingController.php) · [SchedulingServiceProvider.php](../app/Scheduling/SchedulingServiceProvider.php) |
+| Admin UI | [SchedulingPage.tsx](../assets/src/admin/components/scheduling/SchedulingPage.tsx) |
 
 ### Stage 16 Artifact Index
 
@@ -350,6 +363,7 @@ All Stage -1 deliverables live in [`docs/stage--1-discovery/`](stage--1-discover
 | 2026-06-09 | Stage 1 **APPROVED** + pushed. **Stage 2 (Authorization + Security Framework) built & audited**: 13 capabilities, 4-tier permission matrix, 3 custom roles, namespaced nonces, capability Guard, per-IP REST rate limiter (429), hash-chained append-only activity logger (HMAC IP/UA). Decisions D-015, D-016 recorded. Container hardened for optional deps; `/system/health` + menu moved to `bookora_manage_settings`. PHPStan/PHPCS/Jest green; +17 PHPUnit cases (CI). Awaiting approval to enter Stage 3. Pushed to GitHub. |
 | 2026-06-09 | Stage 2 **APPROVED** + pushed. **Stage 3 (Services Module) built & audited**: migration 0002 (`service_categories`); Service/Category repositories with search/filter/paginate; managers with validation+sanitization+slug+audit; REST `ServicesController` (CRUD + bulk) + `ServiceCategoriesController` gated on `bookora_manage_services`; `Router` now gathers controllers via `bookora_rest_controllers` filter (modules self-register); React Services admin (list/search/filters/pagination/bulk + form + media picker). PHPStan/PHPCS/ESLint green; Jest 4/4; +18 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 4. Pushed to GitHub. |
 | 2026-06-09 | Stage 3 **APPROVED** + pushed. **Stage 4 (Staff Management) built & audited**: migration 0003 (`staff_services` join + `staff.skills`); Staff/Availability/StaffService repositories; `StaffManager` (profile + skills + assigned-service sync + audit) and `AvailabilityManager` (validated replace-set of working hours/breaks/time-off/holidays via the availability `type` discriminator); REST `StaffController` + `StaffAvailabilityController` gated on `bookora_manage_staff`; React Staff admin (list + profile/services/skills/weekly-hours/time-off form). PHPStan/PHPCS/ESLint green; Jest 5/5; +15 PHPUnit cases (CI); Vite build OK. Awaiting approval to enter Stage 5. Pushed to GitHub. |
+| 2026-06-14 | Stage 16 **APPROVED** + pushed. **Stage 17 (AI Scheduling) built & audited**: pluggable `SlotScorer` contract + dependency-free `HeuristicScorer` (time-of-day preference + packing/adjacency + soonest-date bonuses); `SchedulingIntelligence` — `suggest()` (ranked open slots over a bounded date range, scored + re-ranked through the new **`bookora_slot_score`** filter), `auto_assign()` (least-loaded eligible staff, tie→lowest id), `forecast()` (weekday-average demand baseline over booking history projected N days), `workload()` (per-staff upcoming load); `SchedulingController` (`/scheduling/{suggestions,auto-assign,forecast,workload}`, gated `bookora_manage_bookings`, validated/clamped inputs); `SchedulingServiceProvider` (registered in `Plugin.php`); new **AI Scheduling** admin screen (forecast bars, workload bars, suggestion tool) + nav/menu/assets wiring. Decision D-027. PHPStan L6 (whole app)/PHPCS/ESLint green; Jest 13 suites/17 tests; +4 PHPUnit cases (CI); build OK. `auto_assign` exposed as an API/admin aid (not yet wired into booking-create); forecast is a baseline (no seasonality/per-service split) — both upgradeable behind the filter. Awaiting approval to enter Stage 18 (Commercial Hardening). |
 | 2026-06-14 | Stage 15 **APPROVED** + pushed. **Stage 16 (Advanced Features) built & audited**: migration 0006 (coupons/gift_cards/memberships/customer_memberships); six DDD modules — Coupons (validate/redeem with min/limit/expiry), GiftCards (issue/balance/atomic debit), Memberships+Subscriptions (plans/enrol/discount/daily renewal cron), Waitlist (join + promote-on-cancel), Resources (CRUD + capacity-aware is_free); `AdvancedController` (admin CRUD + public coupon-validate/gift-card-balance/waitlist-join), `AdvancedServiceProvider` (DI + subscriber + cron), tabbed React Advanced admin. PHPStan/PHPCS/ESLint green; Jest 15/15; +5 PHPUnit cases (CI); build OK. Discount→charge wiring + resource-aware scheduling are documented follow-ups (kept out of the tested money path). Awaiting approval to enter Stage 17 (AI Scheduling). |
 | 2026-06-13 | Stage 14 **APPROVED** + pushed. **Stage 15 (Reporting) built & audited**: `ReportService` (SQL-aggregated KPIs, revenue-by-day, status/conversion, per-staff & per-service bookings+revenue, per-staff utilisation, CSV export); `ReportsController` (overview/utilization/export gated on `bookora_view_reports`); React analytics dashboard (date range, KPI cards, revenue bars, breakdown tables, utilisation, CSV download). PHPStan/PHPCS/ESLint green; Jest 14/14; +4 PHPUnit cases (CI); build OK. Reports group by UTC date (timezone-aware grouping flagged); PDF export deferred. Awaiting approval to enter Stage 16 (Advanced Features). |
 | 2026-06-13 | Stage 13 **APPROVED** + pushed. **Stage 14 (Customer Portal) built & audited**: stateless HMAC `PortalToken` magic-link auth; `PortalManager` (profile, upcoming/past bookings with policy flags, ownership- + window-enforced reschedule/cancel, invoice, no-enumeration link email); public token-scoped `PortalController`; `[bookora_portal]` shortcode + portal React bundle (login/dashboard/bookings/reschedule/cancel/profile) mounting `#bookora-portal-root` (activates the Stage-13 dashboard widget). Settings `portal` block; bookings query exposes service_id/staff_id. Decision D-026. PHPStan/PHPCS/ESLint green; Jest 13/13; +7 PHPUnit cases (CI); build OK (portal.js 2.75 KB gz). Awaiting approval to enter Stage 15 (Reporting). |

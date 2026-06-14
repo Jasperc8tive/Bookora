@@ -23,6 +23,7 @@ use Bookora\Notifications\NotificationsServiceProvider;
 use Bookora\Payments\PaymentsServiceProvider;
 use Bookora\Portal\PortalServiceProvider;
 use Bookora\Reports\ReportsServiceProvider;
+use Bookora\Scheduling\SchedulingServiceProvider;
 use Bookora\Security\SecurityServiceProvider;
 use Bookora\Services\ServicesServiceProvider;
 use Bookora\Staff\StaffServiceProvider;
@@ -75,6 +76,7 @@ final class Plugin {
 		PortalServiceProvider::class,
 		ReportsServiceProvider::class,
 		AdvancedServiceProvider::class,
+		SchedulingServiceProvider::class,
 		FrontendServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,

@@ -111,6 +111,7 @@ final class Assets {
 			Menu::SLUG . '-notifications' => 'notifications',
 			Menu::SLUG . '-integrations'  => 'integrations',
 			Menu::SLUG . '-reports'       => 'reports',
+			Menu::SLUG . '-scheduling'    => 'scheduling',
 			Menu::SLUG . '-advanced'      => 'advanced',
 			default                       => 'dashboard',
 		};
