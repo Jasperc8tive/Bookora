@@ -22,8 +22,18 @@ final class Deactivator {
 	 * @return void
 	 */
 	public static function deactivate(): void {
-		// Clear any scheduled Bookora cron events (none registered yet in Stage 1).
-		wp_clear_scheduled_hook( 'bookora_cron_tick' );
+		// Clear all scheduled Bookora cron events (data is retained).
+		$hooks = array(
+			'bookora_cron_tick',
+			'bookora_notify',
+			'bookora_send_reminder',
+			'bookora_membership_renewals',
+			'bookora_license_refresh',
+			'bookora_telemetry_send',
+		);
+		foreach ( $hooks as $hook ) {
+			wp_clear_scheduled_hook( $hook );
+		}
 
 		// Flush rewrite rules in case later stages registered endpoints.
 		flush_rewrite_rules();

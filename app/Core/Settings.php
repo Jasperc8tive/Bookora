@@ -106,6 +106,15 @@ class Settings {
 				'reschedule_min_hours' => 24,
 				'cancel_min_hours'     => 24,
 			),
+			'telemetry'                => array( 'enabled' => false ),
+			'branding'                 => array(
+				'plugin_name'   => '',
+				'vendor_name'   => '',
+				'support_url'   => '',
+				'logo_url'      => '',
+				'primary_color' => '',
+			),
+			'feature_overrides'        => array(),
 		);
 	}
 

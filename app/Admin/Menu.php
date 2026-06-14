@@ -170,5 +170,14 @@ final class Menu {
 			self::SLUG . '-advanced',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'License & Tools', 'bookora' ),
+			__( 'License & Tools', 'bookora' ),
+			Capabilities::MANAGE_SETTINGS,
+			self::SLUG . '-commercial',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

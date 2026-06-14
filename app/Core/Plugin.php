@@ -12,6 +12,7 @@ namespace Bookora\Core;
 use Bookora\Admin\AdminServiceProvider;
 use Bookora\Advanced\AdvancedServiceProvider;
 use Bookora\API\ApiServiceProvider;
+use Bookora\Commercial\CommercialServiceProvider;
 use Bookora\Core\Contracts\ServiceProvider;
 use Bookora\Database\DatabaseServiceProvider;
 use Bookora\Appointments\AppointmentsServiceProvider;
@@ -77,6 +78,7 @@ final class Plugin {
 		ReportsServiceProvider::class,
 		AdvancedServiceProvider::class,
 		SchedulingServiceProvider::class,
+		CommercialServiceProvider::class,
 		FrontendServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,

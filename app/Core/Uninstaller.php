@@ -52,6 +52,7 @@ final class Uninstaller {
 		'bookora_installed_at',
 		'bookora_caps_version',
 		'bookora_audit_secret',
+		'bookora_license',
 	);
 
 	/**
@@ -81,6 +82,7 @@ final class Uninstaller {
 		foreach ( self::OPTIONS as $option ) {
 			delete_option( $option );
 		}
+		delete_transient( 'bookora_update_check' );
 
 		// Remove custom roles and revoke administrator capabilities.
 		( new Roles() )->remove();

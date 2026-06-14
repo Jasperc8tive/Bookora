@@ -72,9 +72,14 @@ final class Assets {
 			);
 		}
 
-		wp_localize_script(
-			self::HANDLE,
-			'BookoraAdmin',
+		/**
+		 * Filter the data localised into the admin SPA (`window.BookoraAdmin`).
+		 * White-labelling adds a `branding` block here.
+		 *
+		 * @param array<string, mixed> $data Localised data.
+		 */
+		$data = apply_filters(
+			'bookora_admin_data',
 			array(
 				'restUrl' => esc_url_raw( rest_url( 'bookora/v1/' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
@@ -82,6 +87,8 @@ final class Assets {
 				'screen'  => $this->current_screen(),
 			)
 		);
+
+		wp_localize_script( self::HANDLE, 'BookoraAdmin', $data );
 	}
 
 	/**
@@ -113,6 +120,7 @@ final class Assets {
 			Menu::SLUG . '-reports'       => 'reports',
 			Menu::SLUG . '-scheduling'    => 'scheduling',
 			Menu::SLUG . '-advanced'      => 'advanced',
+			Menu::SLUG . '-commercial'    => 'commercial',
 			default                       => 'dashboard',
 		};
 	}
