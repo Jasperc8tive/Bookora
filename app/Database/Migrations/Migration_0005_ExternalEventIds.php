@@ -85,14 +85,11 @@ final class Migration_0005_ExternalEventIds implements MigrationInterface {
 	 */
 	private function column_exists( string $table, string $column ): bool {
 		$full = $this->schema->table( $table );
-		$sql  = $this->wpdb->prepare(
-			'SELECT COLUMN_NAME FROM information_schema.COLUMNS
-			 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s',
-			$full,
-			$column
-		);
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$found = $this->wpdb->get_results( $sql );
+		// SHOW COLUMNS reads the live table definition (unaffected by an open
+		// transaction's snapshot), so the ADD/DROP guard is reliable when
+		// migrate() is re-run.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$found = $this->wpdb->get_results( $this->wpdb->prepare( "SHOW COLUMNS FROM `{$full}` LIKE %s", $column ) );
 
 		return ! empty( $found );
 	}

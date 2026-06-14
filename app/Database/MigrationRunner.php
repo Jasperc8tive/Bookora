@@ -183,14 +183,12 @@ class MigrationRunner {
 	 * @return void
 	 */
 	private function mark_applied( string $version ): void {
-		$this->wpdb->insert(
-			$this->schema->table( 'migrations' ),
-			array(
-				'version'    => $version,
-				'applied_at' => current_time( 'mysql', true ),
-			),
-			array( '%s', '%s' )
-		);
+		$table = $this->schema->table( 'migrations' );
+		$sql   = "INSERT IGNORE INTO `{$table}` (version, applied_at) VALUES (%s, %s)";
+		// INSERT IGNORE keeps marking idempotent: re-recording an already-applied
+		// version is a harmless no-op rather than a duplicate-key error.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$this->wpdb->query( $this->wpdb->prepare( $sql, $version, current_time( 'mysql', true ) ) );
 	}
 
 	/**
