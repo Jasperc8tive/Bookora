@@ -19,6 +19,7 @@ use Bookora\Database\Repository\AuditLogRepository;
 use Bookora\Database\Schema;
 use Bookora\GiftCards\GiftCardManager;
 use Bookora\GiftCards\GiftCardRepository;
+use Bookora\Services\ServiceRepository;
 use Bookora\Memberships\CustomerMembershipRepository;
 use Bookora\Memberships\MembershipManager;
 use Bookora\Memberships\MembershipRepository;
@@ -105,11 +106,15 @@ class AdvancedFeaturesTest extends WP_UnitTestCase {
 
 		$this->assertTrue( $manager->is_free( $rid, '2030-06-12 09:00:00', '2030-06-12 10:00:00' ) );
 
+		// Real FK parents — never assume id 1 exists.
+		$service_id  = ( new ServiceRepository( null, $this->schema ) )->create( array( 'name' => 'Cut', 'duration_min' => 60, 'price' => 0, 'currency' => 'NGN', 'status' => 'active' ) );
+		$customer_id = ( new CustomerRepository( null, $this->schema ) )->create( array( 'name' => 'Joy' ) );
+
 		// Book the room for that window.
 		( new AppointmentRepository( null, $this->schema ) )->create(
 			array(
-				'customer_id' => 1,
-				'service_id'  => 1,
+				'customer_id' => $customer_id,
+				'service_id'  => $service_id,
 				'resource_id' => $rid,
 				'start_at'    => '2030-06-12 09:00:00',
 				'end_at'      => '2030-06-12 10:00:00',
@@ -130,13 +135,16 @@ class AdvancedFeaturesTest extends WP_UnitTestCase {
 		$wl_repo   = new WaitlistRepository( null, $this->schema );
 		$manager   = new WaitlistManager( $wl_repo, $appts, $cm, $this->audit );
 
-		$entry = $manager->join( array( 'service_id' => 7, 'customer' => array( 'name' => 'Joy', 'email' => 'joy@example.com' ) ) );
+		$service_id = ( new ServiceRepository( null, $this->schema ) )->create( array( 'name' => 'Facial', 'duration_min' => 30, 'price' => 0, 'currency' => 'NGN', 'status' => 'active' ) );
+
+		$entry = $manager->join( array( 'service_id' => $service_id, 'customer' => array( 'name' => 'Joy', 'email' => 'joy@example.com' ) ) );
 		$this->assertIsArray( $entry );
 		$this->assertSame( 'active', $entry['status'] );
 
-		// A cancelled appointment for service 7 promotes the waitlisted customer.
+		// A cancelled appointment for the same service promotes the waitlisted customer.
+		$booker  = $customers->create( array( 'name' => 'Booker' ) );
 		$appt_id = $appts->create(
-			array( 'customer_id' => 1, 'service_id' => 7, 'start_at' => '2030-06-12 09:00:00', 'end_at' => '2030-06-12 09:30:00', 'status' => 'cancelled', 'total' => 0, 'currency' => 'NGN' )
+			array( 'customer_id' => $booker, 'service_id' => $service_id, 'start_at' => '2030-06-12 09:00:00', 'end_at' => '2030-06-12 09:30:00', 'status' => 'cancelled', 'total' => 0, 'currency' => 'NGN' )
 		);
 		$this->assertSame( 1, $manager->promote_for_appointment( $appt_id ) );
 		$this->assertSame( 'notified', $wl_repo->find( (int) $entry['id'] )['status'] );

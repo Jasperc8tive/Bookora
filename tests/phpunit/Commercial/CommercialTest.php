@@ -40,7 +40,35 @@ class CommercialTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		delete_option( 'bookora_license' );
+		// This class exercises DataPortability::import and BackupManager, which
+		// COMMIT (atomic restore) and therefore END WP_UnitTestCase's isolation
+		// transaction. Without an explicit purge, that committed data leaks into
+		// later test classes. Clean up the rows we may have committed.
+		$this->purge_bookora_tables();
 		parent::tear_down();
+	}
+
+	/**
+	 * Delete all rows from the Bookora data tables (FK-safe), excluding the
+	 * migration ledger. Used to undo data committed by import/backup tests.
+	 */
+	private function purge_bookora_tables(): void {
+		global $wpdb;
+		$prefix = $wpdb->prefix . 'bkra_';
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$tables = (array) $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $prefix ) . '%' ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->query( 'SET FOREIGN_KEY_CHECKS = 0' );
+		foreach ( $tables as $table ) {
+			if ( $prefix . 'migrations' === $table ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->query( "DELETE FROM `{$table}`" );
+		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->query( 'SET FOREIGN_KEY_CHECKS = 1' );
 	}
 
 	private function license(): LicenseManager {
@@ -300,7 +328,12 @@ class CommercialTest extends WP_UnitTestCase {
 		$restored = $backups->restore( $id );
 		$this->assertIsArray( $restored );
 
-		array_map( 'unlink', (array) glob( $dir . '/*' ) );
+		// Recursive cleanup that includes hidden guard files (.htaccess, web.config).
+		foreach ( (array) glob( $dir . '/{,.}*', GLOB_BRACE ) as $entry ) {
+			if ( is_file( $entry ) ) {
+				unlink( $entry );
+			}
+		}
 		rmdir( $dir );
 	}
 

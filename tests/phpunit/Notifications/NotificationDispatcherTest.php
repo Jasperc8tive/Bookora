@@ -108,11 +108,12 @@ class NotificationDispatcherTest extends WP_UnitTestCase {
 		$schema    = new Schema();
 		$customers = new CustomerRepository( null, $schema );
 		$appts     = new AppointmentRepository( null, $schema );
+		$sid       = ( new \Bookora\Services\ServiceRepository( null, $schema ) )->create( array( 'name' => 'Facial', 'duration_min' => 30, 'price' => 10, 'currency' => 'NGN', 'status' => 'active' ) );
 		$cid       = $customers->create( array( 'name' => 'NoEmail' ) );
 		$aid       = $appts->create(
 			array(
 				'customer_id' => $cid,
-				'service_id'  => 1,
+				'service_id'  => $sid,
 				'start_at'    => '2030-06-12 10:00:00',
 				'end_at'      => '2030-06-12 10:30:00',
 				'status'      => 'pending',

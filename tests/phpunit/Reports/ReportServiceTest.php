@@ -24,6 +24,9 @@ class ReportServiceTest extends WP_UnitTestCase {
 
 	private ReportService $reports;
 	private AppointmentRepository $appointments;
+	private int $customer_id;
+	private int $service_id;
+	private int $staff_id;
 
 	public function set_up(): void {
 		parent::set_up();
@@ -31,18 +34,23 @@ class ReportServiceTest extends WP_UnitTestCase {
 		$schema             = new Schema();
 		$this->appointments = new AppointmentRepository( null, $schema );
 		$this->reports      = new ReportService( null, $schema, new Clock(), new AvailabilityRepository( null, $schema ) );
+
+		// Real FK parents — never assume id 1 exists.
+		$this->customer_id = ( new \Bookora\Customers\CustomerRepository( null, $schema ) )->create( array( 'name' => 'Joy' ) );
+		$this->service_id  = ( new \Bookora\Services\ServiceRepository( null, $schema ) )->create( array( 'name' => 'Cut', 'duration_min' => 30, 'price' => 50, 'currency' => 'NGN', 'status' => 'active' ) );
+		$this->staff_id    = ( new \Bookora\Staff\StaffRepository( null, $schema ) )->create( array( 'display_name' => 'Ada', 'status' => 'active' ) );
 	}
 
 	public function tear_down(): void {
 		parent::tear_down();
 	}
 
-	private function appt( string $status, float $total, float $paid, string $start, ?int $staff = 1 ): void {
+	private function appt( string $status, float $total, float $paid, string $start, ?int $staff = null ): void {
 		$this->appointments->create(
 			array(
-				'customer_id' => 1,
-				'service_id'  => 1,
-				'staff_id'    => $staff,
+				'customer_id' => $this->customer_id,
+				'service_id'  => $this->service_id,
+				'staff_id'    => $staff ?? $this->staff_id,
 				'start_at'    => $start,
 				'end_at'      => gmdate( 'Y-m-d H:i:s', strtotime( $start ) + 3600 ),
 				'status'      => $status,

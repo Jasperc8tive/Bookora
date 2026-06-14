@@ -54,11 +54,12 @@ class PaymentManagerTest extends WP_UnitTestCase {
 
 		$service_id  = $services->create( array( 'name' => 'Cut', 'price' => 100, 'currency' => 'NGN', 'deposit_type' => 'percent', 'deposit_value' => 25 ) );
 		$customer_id = $customers->create( array( 'name' => 'Joy', 'email' => 'joy@example.com' ) );
+		$staff_id    = ( new \Bookora\Staff\StaffRepository( null, $schema ) )->create( array( 'display_name' => 'Ada', 'status' => 'active' ) );
 		$this->appointment_id = $this->appointments->create(
 			array(
 				'customer_id' => $customer_id,
 				'service_id'  => $service_id,
-				'staff_id'    => 1,
+				'staff_id'    => $staff_id,
 				'start_at'    => '2030-06-12 09:00:00',
 				'end_at'      => '2030-06-12 09:30:00',
 				'status'      => 'pending',

@@ -32,6 +32,8 @@ class PortalManagerTest extends WP_UnitTestCase {
 	private AppointmentRepository $appointments;
 	private int $customer_id;
 	private int $other_id;
+	private int $service_id;
+	private int $staff_id;
 
 	public function set_up(): void {
 		parent::set_up();
@@ -39,6 +41,14 @@ class PortalManagerTest extends WP_UnitTestCase {
 		$schema             = new Schema();
 		$this->customers    = new CustomerRepository( null, $schema );
 		$this->appointments = new AppointmentRepository( null, $schema );
+
+		// Real fixture records — never assume AUTO_INCREMENT values.
+		$this->service_id = ( new \Bookora\Services\ServiceRepository( null, $schema ) )->create(
+			array( 'name' => 'Cut', 'duration_min' => 30, 'price' => 50, 'currency' => 'NGN', 'status' => 'active' )
+		);
+		$this->staff_id = ( new \Bookora\Staff\StaffRepository( null, $schema ) )->create(
+			array( 'display_name' => 'Ada', 'status' => 'active' )
+		);
 
 		$this->portal = $this->build_manager( $schema );
 
@@ -63,7 +73,17 @@ class PortalManagerTest extends WP_UnitTestCase {
 		$engine     = new BookingEngine( $svc, $staff, $this->customers, $this->appointments, $holds, $conflicts, $clock, $audit );
 		$av_engine  = new AvailabilityEngine( $svc, $avail, $assign, $this->appointments, $holds, $clock );
 		$cm         = new \Bookora\Customers\CustomerManager( $this->customers, new \Bookora\Customers\NoteRepository( null, $schema ), $audit_repo, $audit );
-		$pay        = $this->createMock( \Bookora\Payments\PaymentManager::class );
+		// PaymentManager is final and these tests never exercise its invoice path,
+		// so use a real instance rather than mocking a final class.
+		$pay        = new \Bookora\Payments\PaymentManager(
+			new \Bookora\Payments\PaymentRepository( null, $schema ),
+			$this->appointments,
+			$svc,
+			$this->customers,
+			new \Bookora\Payments\GatewayRegistry(),
+			new Settings(),
+			$audit
+		);
 
 		return new PortalManager( $this->customers, $cm, $this->appointments, $engine, $av_engine, $pay, new Settings(), $clock );
 	}
@@ -75,8 +95,8 @@ class PortalManagerTest extends WP_UnitTestCase {
 		return $this->appointments->create(
 			array(
 				'customer_id' => $customer_id,
-				'service_id'  => 1,
-				'staff_id'    => 1,
+				'service_id'  => $this->service_id,
+				'staff_id'    => $this->staff_id,
 				'start_at'    => $start,
 				'end_at'      => $end,
 				'status'      => 'confirmed',
