@@ -85,16 +85,20 @@ install_test_suite() {
 	if [ ! -f "$WP_TESTS_DIR/wp-tests-config.php" ]; then
 		download "https://develop.svn.wordpress.org/tags/${WP_VERSION_TAG}/wp-tests-config-sample.php" "$WP_TESTS_DIR/wp-tests-config.php" \
 			|| download "https://develop.svn.wordpress.org/trunk/wp-tests-config-sample.php" "$WP_TESTS_DIR/wp-tests-config.php"
+		local cfg="$WP_TESTS_DIR/wp-tests-config.php"
 		# shellcheck disable=SC2086
-		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" "$WP_TESTS_DIR/wp-tests-config.php"
+		sed $ioption "s:dirname( __FILE__ ) . '/src/':'$WP_CORE_DIR/':" "$cfg"
+		# Replace each DB define deterministically (independent of the sample's
+		# placeholder text), so DB_HOST is never left as the default 'localhost'
+		# (which makes mysqli try a non-existent unix socket).
 		# shellcheck disable=SC2086
-		sed $ioption "s/youremptytestdbnamehere/$DB_NAME/" "$WP_TESTS_DIR/wp-tests-config.php"
+		sed $ioption "s/define( *'DB_NAME'.*/define( 'DB_NAME', '${DB_NAME}' );/" "$cfg"
 		# shellcheck disable=SC2086
-		sed $ioption "s/yourusernamehere/$DB_USER/" "$WP_TESTS_DIR/wp-tests-config.php"
+		sed $ioption "s/define( *'DB_USER'.*/define( 'DB_USER', '${DB_USER}' );/" "$cfg"
 		# shellcheck disable=SC2086
-		sed $ioption "s/yourpasswordhere/$DB_PASS/" "$WP_TESTS_DIR/wp-tests-config.php"
+		sed $ioption "s/define( *'DB_PASSWORD'.*/define( 'DB_PASSWORD', '${DB_PASS}' );/" "$cfg"
 		# shellcheck disable=SC2086
-		sed $ioption "s|localhost|${DB_HOST}|" "$WP_TESTS_DIR/wp-tests-config.php"
+		sed $ioption "s/define( *'DB_HOST'.*/define( 'DB_HOST', '${DB_HOST}' );/" "$cfg"
 	fi
 }
 

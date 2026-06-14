@@ -11,7 +11,7 @@ namespace Bookora\Tests\Scheduling;
 
 use Bookora\Appointments\AppointmentRepository;
 use Bookora\Appointments\AvailabilityEngine;
-use Bookora\Appointments\AvailabilityRepository;
+use Bookora\Staff\AvailabilityRepository;
 use Bookora\Appointments\BookingEngine;
 use Bookora\Appointments\BookingHoldRepository;
 use Bookora\Appointments\Clock;
