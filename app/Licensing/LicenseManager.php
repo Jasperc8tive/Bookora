@@ -90,7 +90,7 @@ final class LicenseManager {
 		$record = array(
 			'key'        => $this->crypto->encrypt( $key ),
 			'status'     => (string) ( $response['status'] ?? 'active' ),
-			'tier'       => $this->normalise_tier( (string) ( $response['tier'] ?? 'pro' ) ),
+			'tier'       => $this->normalise_tier( (string) ( $response['tier'] ?? 'free' ) ),
 			'expires_at' => (string) ( $response['expires_at'] ?? '' ),
 			'checked_at' => time(),
 		);
@@ -211,11 +211,11 @@ final class LicenseManager {
 	private function remote( string $action, string $key ): array|WP_Error {
 		$url = $this->api_url();
 		if ( '' === $url ) {
-			// No server configured: treat activation optimistically as a self-hosted
-			// pro license so paid features work in self-managed deployments.
+			// Default-deny: with no license server the site stays on the FREE tier.
+			// Paid tiers require a verifiable response from a configured server.
 			return 'deactivate' === $action ? array() : array(
 				'status' => 'active',
-				'tier'   => 'pro',
+				'tier'   => 'free',
 			);
 		}
 
@@ -237,13 +237,58 @@ final class LicenseManager {
 		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
-		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$raw  = (string) wp_remote_retrieve_body( $response );
+		$body = json_decode( $raw, true );
 		if ( $code >= 400 || ! is_array( $body ) ) {
 			$message = is_array( $body ) && isset( $body['message'] ) ? (string) $body['message'] : __( 'The license key was rejected.', 'bookora' );
 			return new WP_Error( 'bookora_license_invalid', $message, array( 'status' => 422 ) );
 		}
 
-		return isset( $body['data'] ) && is_array( $body['data'] ) ? $body['data'] : $body;
+		$data = isset( $body['data'] ) && is_array( $body['data'] ) ? $body['data'] : $body;
+
+		// When a public key is configured, the server response MUST be signed.
+		// This makes tier/expiry claims tamper-evident (MITM / spoofed JSON).
+		if ( ! $this->verify_signature( $data, (string) ( $body['signature'] ?? '' ) ) ) {
+			return new WP_Error( 'bookora_license_untrusted', __( 'The license response could not be verified.', 'bookora' ), array( 'status' => 502 ) );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Verify an RSA-SHA256 signature over the canonical JSON of the response
+	 * data, using the configured public key.
+	 *
+	 * Returns true when no public key is configured (signature enforcement is
+	 * opt-in via `bookora_license_public_key`), and false when a key is set but
+	 * the signature is missing or invalid.
+	 *
+	 * @param array<string, mixed> $data      Response data.
+	 * @param string               $signature Base64 signature from the server.
+	 * @return bool
+	 */
+	private function verify_signature( array $data, string $signature ): bool {
+		/**
+		 * Filter the PEM public key used to verify license-server responses.
+		 * Empty disables signature enforcement (server is trusted over TLS only).
+		 *
+		 * @param string $pem PEM-encoded public key.
+		 */
+		$pem = (string) apply_filters( 'bookora_license_public_key', '' );
+		if ( '' === $pem ) {
+			return true;
+		}
+		if ( '' === $signature || ! function_exists( 'openssl_verify' ) ) {
+			return false;
+		}
+
+		$canonical = (string) wp_json_encode( $data );
+		$decoded   = base64_decode( $signature, true );
+		if ( false === $decoded ) {
+			return false;
+		}
+
+		return 1 === openssl_verify( $canonical, $decoded, $pem, OPENSSL_ALGO_SHA256 );
 	}
 
 	/**

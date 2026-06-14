@@ -64,12 +64,7 @@ class Logger extends AbstractLogger {
 		$level           = (string) $settings->get( 'log_level', LogLevel::ERROR );
 		$this->threshold = self::SEVERITY[ $level ] ?? self::SEVERITY[ LogLevel::ERROR ];
 
-		if ( null !== $directory ) {
-			$this->directory = rtrim( $directory, '/\\' );
-		} else {
-			$uploads         = wp_upload_dir();
-			$this->directory = trailingslashit( $uploads['basedir'] ) . 'bookora-logs';
-		}
+		$this->directory = null !== $directory ? rtrim( $directory, '/\\' ) : ProtectedDirectory::path( 'logs' );
 	}
 
 	/**
@@ -130,24 +125,6 @@ class Logger extends AbstractLogger {
 	 * @return bool Whether the directory is usable.
 	 */
 	private function ensure_directory(): bool {
-		if ( is_dir( $this->directory ) ) {
-			return true;
-		}
-
-		if ( ! wp_mkdir_p( $this->directory ) ) {
-			return false;
-		}
-
-		// Deny direct web access to logs.
-		$htaccess = $this->directory . '/.htaccess';
-		if ( ! file_exists( $htaccess ) ) {
-			file_put_contents( $htaccess, "Require all denied\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		}
-		$index = $this->directory . '/index.php';
-		if ( ! file_exists( $index ) ) {
-			file_put_contents( $index, "<?php // Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		}
-
-		return true;
+		return ProtectedDirectory::ensure( $this->directory );
 	}
 }

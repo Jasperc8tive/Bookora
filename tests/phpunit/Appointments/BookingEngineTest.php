@@ -340,4 +340,59 @@ class BookingEngineTest extends WP_UnitTestCase {
 
 		$this->assertSame( (int) $first['created'][0]['id'], (int) $second['created'][0]['id'] );
 	}
+
+	/**
+	 * HOTFIX-003: when the per-staff advisory lock cannot be acquired, create()
+	 * must fail closed (409 busy) rather than enter the critical section and
+	 * risk a double-booking.
+	 */
+	public function test_create_fails_closed_when_lock_unavailable(): void {
+		$clock     = new Clock( new DateTimeZone( 'UTC' ) );
+		$holds     = new BookingHoldRepository( null, $this->schema );
+		$conflicts = new ConflictDetector( $this->appointments, $holds, $clock );
+		$audit     = new ActivityLogger( new AuditLogRepository( null, $this->schema ) );
+
+		// A wpdb whose GET_LOCK never grants (returns 0).
+		$wpdb = $this->createMock( \wpdb::class );
+		$wpdb->method( 'get_var' )->willReturn( '0' );
+
+		$booking = new BookingEngine(
+			$this->services,
+			$this->staff,
+			$this->customers,
+			$this->appointments,
+			$holds,
+			$conflicts,
+			$clock,
+			$audit,
+			$wpdb
+		);
+
+		$service  = $this->seed_service();
+		$staff_id = $this->seed_staff( $clock, $service );
+		$customer = $this->seed_customer();
+
+		$result = $booking->create(
+			array(
+				'service_id'  => $service,
+				'staff_id'    => $staff_id,
+				'customer_id' => $customer,
+				'start'       => self::DATE . ' 09:00:00',
+			)
+		);
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( 'bookora_busy', $result->get_error_code() );
+		$this->assertSame( 409, $result->get_error_data()['status'] );
+
+		// And nothing was written.
+		$this->assertCount( 16, ( new AvailabilityEngine(
+			$this->services,
+			$this->availability_repo,
+			$this->assignments,
+			$this->appointments,
+			$holds,
+			$clock
+		) )->for_date( $service, $staff_id, self::DATE )['slots'] );
+	}
 }

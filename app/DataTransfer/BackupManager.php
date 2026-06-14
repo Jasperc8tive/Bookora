@@ -9,23 +9,27 @@ declare(strict_types=1);
 
 namespace Bookora\DataTransfer;
 
+use Bookora\Core\ProtectedDirectory;
 use Bookora\Security\ActivityLogger;
+use Bookora\Security\Crypto;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Creates point-in-time snapshots of all Bookora data as protected JSON files in
- * `uploads/bookora-backups/` and restores them. Built on {@see DataPortability}
- * so backups and exports share one (well-tested) serialisation format.
+ * Creates point-in-time snapshots of all Bookora data and restores them. Built
+ * on {@see DataPortability} so backups and exports share one (well-tested)
+ * serialisation format.
  *
- * The directory is protected from direct web access (`.htaccess` deny +
- * `index.php`) the same way the log directory is.
+ * Snapshots are written to an unguessable, per-site {@see ProtectedDirectory}
+ * (Apache/IIS guard files + index, plus an HMAC-named path for nginx) and are
+ * **encrypted at rest** via {@see Crypto}, so an exposed file leaks nothing.
  */
 final class BackupManager {
 
 	private DataPortability $data;
 	private ActivityLogger $audit;
+	private Crypto $crypto;
 	private string $directory;
 
 	/**
@@ -33,17 +37,14 @@ final class BackupManager {
 	 *
 	 * @param DataPortability $data      Data portability service.
 	 * @param ActivityLogger  $audit     Audit logger.
+	 * @param Crypto          $crypto    At-rest encryption.
 	 * @param string|null     $directory Optional directory override (tests).
 	 */
-	public function __construct( DataPortability $data, ActivityLogger $audit, ?string $directory = null ) {
-		$this->data  = $data;
-		$this->audit = $audit;
-		if ( null !== $directory ) {
-			$this->directory = rtrim( $directory, '/\\' );
-		} else {
-			$uploads         = wp_upload_dir();
-			$this->directory = trailingslashit( $uploads['basedir'] ) . 'bookora-backups';
-		}
+	public function __construct( DataPortability $data, ActivityLogger $audit, Crypto $crypto, ?string $directory = null ) {
+		$this->data      = $data;
+		$this->audit     = $audit;
+		$this->crypto    = $crypto;
+		$this->directory = null !== $directory ? rtrim( $directory, '/\\' ) : ProtectedDirectory::path( 'backups' );
 	}
 
 	/**
@@ -64,8 +65,11 @@ final class BackupManager {
 			return new WP_Error( 'bookora_backup_encode', __( 'The backup could not be encoded.', 'bookora' ), array( 'status' => 500 ) );
 		}
 
+		// Encrypt at rest so an exposed backup file leaks nothing.
+		$ciphertext = $this->crypto->encrypt( $json );
+
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-		if ( false === file_put_contents( $file, $json ) ) {
+		if ( false === file_put_contents( $file, $ciphertext ) ) {
 			return new WP_Error( 'bookora_backup_write', __( 'The backup file could not be written.', 'bookora' ), array( 'status' => 500 ) );
 		}
 
@@ -109,10 +113,13 @@ final class BackupManager {
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents
-		$json    = (string) file_get_contents( $file );
-		$payload = json_decode( $json, true );
+		$contents = (string) file_get_contents( $file );
+
+		// Backups are encrypted at rest; fall back to legacy plaintext JSON.
+		$json    = $this->crypto->decrypt( $contents );
+		$payload = json_decode( null !== $json ? $json : $contents, true );
 		if ( ! is_array( $payload ) ) {
-			return new WP_Error( 'bookora_backup_corrupt', __( 'The backup file is corrupt.', 'bookora' ), array( 'status' => 422 ) );
+			return new WP_Error( 'bookora_backup_corrupt', __( 'The backup file is corrupt or could not be decrypted.', 'bookora' ), array( 'status' => 422 ) );
 		}
 
 		$result = $this->data->import( $payload, true );
@@ -180,24 +187,6 @@ final class BackupManager {
 	 * @return bool
 	 */
 	private function ensure_directory(): bool {
-		if ( is_dir( $this->directory ) ) {
-			return true;
-		}
-		if ( ! wp_mkdir_p( $this->directory ) ) {
-			return false;
-		}
-
-		$htaccess = $this->directory . '/.htaccess';
-		if ( ! file_exists( $htaccess ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-			file_put_contents( $htaccess, "Require all denied\n" );
-		}
-		$index = $this->directory . '/index.php';
-		if ( ! file_exists( $index ) ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-			file_put_contents( $index, "<?php // Silence is golden.\n" );
-		}
-
-		return true;
+		return ProtectedDirectory::ensure( $this->directory );
 	}
 }

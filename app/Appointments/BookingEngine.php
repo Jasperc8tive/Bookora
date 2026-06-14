@@ -31,6 +31,11 @@ final class BookingEngine {
 	private const MAX_OCCURRENCES = 60;
 
 	/**
+	 * Seconds to wait for a per-staff booking lock before failing closed.
+	 */
+	private const LOCK_TIMEOUT = 5;
+
+	/**
 	 * Bookable statuses accepted on create.
 	 *
 	 * @var array<int, string>
@@ -67,7 +72,8 @@ final class BookingEngine {
 		BookingHoldRepository $holds,
 		ConflictDetector $conflicts,
 		Clock $clock,
-		ActivityLogger $audit
+		ActivityLogger $audit,
+		?\wpdb $wpdb = null
 	) {
 		$this->services     = $services;
 		$this->staff        = $staff;
@@ -77,7 +83,7 @@ final class BookingEngine {
 		$this->conflicts    = $conflicts;
 		$this->clock        = $clock;
 		$this->audit        = $audit;
-		$this->wpdb         = $GLOBALS['wpdb'];
+		$this->wpdb         = $wpdb ?? $GLOBALS['wpdb'];
 	}
 
 	/**
@@ -113,41 +119,44 @@ final class BookingEngine {
 		$created = array();
 		$skipped = array();
 
-		$this->with_staff_lock(
-			$staff_id,
-			function () use ( $service, $staff_id, $customer_id, $starts, $status, $source, $input, &$created, &$skipped ): void {
-				$parent_id = null;
-				$single    = count( $starts ) === 1;
+		// Fail closed: never enter the booking critical section without the lock.
+		if ( ! $this->acquire_lock( $staff_id ) ) {
+			return $this->busy();
+		}
+		try {
+			$parent_id = null;
+			$single    = count( $starts ) === 1;
 
-				foreach ( $starts as $start ) {
-					$id = $this->book_one(
-						$service,
-						$staff_id,
-						$customer_id,
-						$start,
-						$status,
-						$single ? (string) ( $input['idempotency_key'] ?? '' ) : '',
-						(string) ( $input['session_token'] ?? '' ),
-						$parent_id,
-						(int) ( $input['location_id'] ?? 0 ),
-						$source
+			foreach ( $starts as $start ) {
+				$id = $this->book_one(
+					$service,
+					$staff_id,
+					$customer_id,
+					$start,
+					$status,
+					$single ? (string) ( $input['idempotency_key'] ?? '' ) : '',
+					(string) ( $input['session_token'] ?? '' ),
+					$parent_id,
+					(int) ( $input['location_id'] ?? 0 ),
+					$source
+				);
+
+				if ( null === $id ) {
+					$skipped[] = array(
+						'start'  => $this->clock->local_string( $start ),
+						'reason' => 'conflict',
 					);
-
-					if ( null === $id ) {
-						$skipped[] = array(
-							'start'  => $this->clock->local_string( $start ),
-							'reason' => 'conflict',
-						);
-						continue;
-					}
-					$row       = (array) $this->appointments->find( $id );
-					$created[] = $row;
-					if ( null === $parent_id ) {
-						$parent_id = $id;
-					}
+					continue;
+				}
+				$row       = (array) $this->appointments->find( $id );
+				$created[] = $row;
+				if ( null === $parent_id ) {
+					$parent_id = $id;
 				}
 			}
-		);
+		} finally {
+			$this->release_lock( $staff_id );
+		}
 
 		if ( '' !== (string) ( $input['session_token'] ?? '' ) ) {
 			$this->holds->delete_by_token( (string) $input['session_token'] );
@@ -215,22 +224,23 @@ final class BookingEngine {
 			$end = $start + ( max( 1, (int) $service['duration_min'] ) * MINUTE_IN_SECONDS );
 		}
 
-		$taken = $this->with_staff_lock(
-			$staff_id,
-			fn (): bool => $this->slot_taken( $service, $staff_id, $start, $end, $id, '' )
-				? true
-				: ! $this->appointments->update(
-					$id,
-					array(
-						'staff_id' => $staff_id,
-						'start_at' => $this->clock->utc_string( $start ),
-						'end_at'   => $this->clock->utc_string( $end ),
-					)
+		if ( ! $this->acquire_lock( $staff_id ) ) {
+			return $this->busy();
+		}
+		try {
+			if ( $this->slot_taken( $service, $staff_id, $start, $end, $id, '' ) ) {
+				return new WP_Error( 'bookora_conflict', __( 'That time is not available.', 'bookora' ), array( 'status' => 409 ) );
+			}
+			$this->appointments->update(
+				$id,
+				array(
+					'staff_id' => $staff_id,
+					'start_at' => $this->clock->utc_string( $start ),
+					'end_at'   => $this->clock->utc_string( $end ),
 				)
-		);
-
-		if ( $taken ) {
-			return new WP_Error( 'bookora_conflict', __( 'That time is not available.', 'bookora' ), array( 'status' => 409 ) );
+			);
+		} finally {
+			$this->release_lock( $staff_id );
 		}
 
 		$this->audit->log(
@@ -304,22 +314,30 @@ final class BookingEngine {
 		}
 		$end = $epoch + ( max( 1, (int) $service['duration_min'] ) * MINUTE_IN_SECONDS );
 
-		if ( $this->slot_taken( $service, $staff_id, $epoch, $end, null, '' ) ) {
-			return new WP_Error( 'bookora_conflict', __( 'That time is not available.', 'bookora' ), array( 'status' => 409 ) );
+		// Serialize the check-and-create so two visitors can't both hold the slot.
+		if ( ! $this->acquire_lock( $staff_id ) ) {
+			return $this->busy();
 		}
+		try {
+			if ( $this->slot_taken( $service, $staff_id, $epoch, $end, null, '' ) ) {
+				return new WP_Error( 'bookora_conflict', __( 'That time is not available.', 'bookora' ), array( 'status' => 409 ) );
+			}
 
-		$token   = wp_generate_password( 32, false, false );
-		$expires = time() + max( 60, $ttl );
-		$this->holds->create(
-			array(
-				'service_id'    => $service_id,
-				'staff_id'      => $staff_id,
-				'start_at'      => $this->clock->utc_string( $epoch ),
-				'end_at'        => $this->clock->utc_string( $end ),
-				'session_token' => $token,
-				'expires_at'    => $this->clock->utc_string( $expires ),
-			)
-		);
+			$token   = wp_generate_password( 32, false, false );
+			$expires = time() + max( 60, $ttl );
+			$this->holds->create(
+				array(
+					'service_id'    => $service_id,
+					'staff_id'      => $staff_id,
+					'start_at'      => $this->clock->utc_string( $epoch ),
+					'end_at'        => $this->clock->utc_string( $end ),
+					'session_token' => $token,
+					'expires_at'    => $this->clock->utc_string( $expires ),
+				)
+			);
+		} finally {
+			$this->release_lock( $staff_id );
+		}
 
 		return array(
 			'token'      => $token,
@@ -481,22 +499,47 @@ final class BookingEngine {
 	}
 
 	/**
-	 * Run a callback while holding a per-staff advisory lock (best effort).
+	 * Acquire a per-staff advisory lock, failing closed.
 	 *
-	 * @template T
-	 * @param int               $staff_id Staff id.
-	 * @param callable(): T     $callback Critical section.
-	 * @return mixed
+	 * Returns true only when MySQL confirms the lock was granted (GET_LOCK
+	 * returns exactly 1). A timeout (0) or error (NULL) returns false so the
+	 * caller can abort rather than enter the critical section unprotected.
+	 *
+	 * Note: GET_LOCK is scoped to the primary connection. Active/active or
+	 * multi-primary MySQL topologies do not share advisory locks and require a
+	 * different serialization strategy.
+	 *
+	 * @param int $staff_id Staff id (0 = unassigned bucket).
+	 * @return bool
 	 */
-	private function with_staff_lock( int $staff_id, callable $callback ): mixed {
-		$key = 'bkra_book_' . $staff_id;
+	private function acquire_lock( int $staff_id ): bool {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
-		$this->wpdb->get_var( $this->wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $key, 5 ) );
-		try {
-			return $callback();
-		} finally {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$this->wpdb->get_var( $this->wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $key ) );
-		}
+		$got = $this->wpdb->get_var( $this->wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', 'bkra_book_' . $staff_id, self::LOCK_TIMEOUT ) );
+
+		return '1' === (string) $got;
+	}
+
+	/**
+	 * Release a previously-acquired per-staff advisory lock.
+	 *
+	 * @param int $staff_id Staff id.
+	 * @return void
+	 */
+	private function release_lock( int $staff_id ): void {
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$this->wpdb->get_var( $this->wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', 'bkra_book_' . $staff_id ) );
+	}
+
+	/**
+	 * Standard "could not serialize, retry" error.
+	 *
+	 * @return WP_Error
+	 */
+	private function busy(): WP_Error {
+		return new WP_Error(
+			'bookora_busy',
+			__( 'The booking system is busy. Please try again in a moment.', 'bookora' ),
+			array( 'status' => 409 )
+		);
 	}
 }

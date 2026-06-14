@@ -1,6 +1,6 @@
 {
   "name": "bookora",
-  "version": "1.0.0",
+  "version": "1.0.0-rc2",
   "private": true,
   "description": "Bookora admin SPA + front-end widget build (React + TypeScript + Vite + Tailwind).",
   "license": "GPL-2.0-or-later",

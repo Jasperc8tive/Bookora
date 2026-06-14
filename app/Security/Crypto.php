@@ -24,44 +24,71 @@ final class Crypto {
 	private const TAG_LEN = 16;
 
 	/**
-	 * Encrypt a string. Returns the original on environments without OpenSSL
-	 * (degraded, but functional) — callers should treat stored values as opaque.
+	 * Current ciphertext prefix. Versioned so the on-disk format can evolve and
+	 * so decryption can route legacy values during migration.
+	 */
+	private const PREFIX = 'enc:v1:';
+
+	/**
+	 * Encrypt a string with AES-256-GCM.
+	 *
+	 * There is **no plaintext fallback**: OpenSSL is a hard requirement (enforced
+	 * at bootstrap), so secrets are never written unencrypted. A failure throws
+	 * rather than silently degrading.
 	 *
 	 * @param string $plaintext Plaintext.
-	 * @return string Base64 ciphertext (prefixed) or a marker for plaintext fallback.
+	 * @return string Versioned, base64 ciphertext (`enc:v1:…`).
+	 *
+	 * @throws \RuntimeException When OpenSSL is unavailable or encryption fails.
 	 */
 	public function encrypt( string $plaintext ): string {
 		if ( ! function_exists( 'openssl_encrypt' ) ) {
-			return 'plain:' . base64_encode( $plaintext );
+			throw new \RuntimeException( 'Bookora requires the OpenSSL PHP extension to store secrets.' );
 		}
 
 		$iv  = random_bytes( self::IV_LEN );
 		$tag = '';
 		$ct  = openssl_encrypt( $plaintext, self::CIPHER, $this->key(), OPENSSL_RAW_DATA, $iv, $tag, '', self::TAG_LEN );
 		if ( false === $ct ) {
-			return 'plain:' . base64_encode( $plaintext );
+			throw new \RuntimeException( 'Bookora failed to encrypt a secret.' );
 		}
 
-		return 'enc:' . base64_encode( $iv . $tag . $ct );
+		return self::PREFIX . base64_encode( $iv . $tag . $ct );
 	}
 
 	/**
-	 * Decrypt a value produced by encrypt(). Returns null on failure.
+	 * Decrypt a value produced by encrypt(). Returns null on any failure —
+	 * including after a WordPress salt rotation, which changes the derived key
+	 * and renders prior ciphertext undecryptable. Callers treat null as "secret
+	 * lost; re-authenticate" (e.g. reconnect a calendar, re-activate a license).
+	 *
+	 * Reads the current `enc:v1:` format and legacy `enc:` / `plain:` values to
+	 * support in-place migration from earlier builds.
 	 *
 	 * @param string $value Stored value.
 	 * @return string|null
 	 */
 	public function decrypt( string $value ): ?string {
+		// Legacy plaintext fallback from pre-1.0 builds (migration only).
 		if ( str_starts_with( $value, 'plain:' ) ) {
 			$decoded = base64_decode( substr( $value, 6 ), true );
 
 			return false === $decoded ? null : $decoded;
 		}
-		if ( ! str_starts_with( $value, 'enc:' ) || ! function_exists( 'openssl_decrypt' ) ) {
+
+		if ( str_starts_with( $value, self::PREFIX ) ) {
+			$payload = substr( $value, strlen( self::PREFIX ) );
+		} elseif ( str_starts_with( $value, 'enc:' ) ) {
+			$payload = substr( $value, 4 ); // Legacy unversioned ciphertext.
+		} else {
 			return null;
 		}
 
-		$raw = base64_decode( substr( $value, 4 ), true );
+		if ( ! function_exists( 'openssl_decrypt' ) ) {
+			return null;
+		}
+
+		$raw = base64_decode( $payload, true );
 		if ( false === $raw || strlen( $raw ) <= self::IV_LEN + self::TAG_LEN ) {
 			return null;
 		}

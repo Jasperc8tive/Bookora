@@ -3,7 +3,7 @@
  * Plugin Name:       Bookora — Appointment Booking
  * Plugin URI:        https://bookora.app
  * Description:       The fastest WordPress appointment booking platform. Paystack-native, Flutterwave-native, WhatsApp-native, Elementor-first.
- * Version:           1.0.0
+ * Version:           1.0.0-rc2
  * Requires at least: 6.8
  * Requires PHP:      8.2
  * Author:            Bookora
@@ -23,7 +23,7 @@ defined( 'ABSPATH' ) || exit;
  * Constants
  * --------------------------------------------------------------------------
  */
-define( 'BOOKORA_VERSION', '1.0.0' );
+define( 'BOOKORA_VERSION', '1.0.0-rc2' );
 define( 'BOOKORA_DB_VERSION', '1' );
 define( 'BOOKORA_FILE', __FILE__ );
 define( 'BOOKORA_PATH', plugin_dir_path( __FILE__ ) );
@@ -51,6 +51,21 @@ if ( version_compare( PHP_VERSION, BOOKORA_MIN_PHP, '<' ) ) {
 				esc_html( PHP_VERSION )
 			);
 			printf( '<div class="notice notice-error"><p>%s</p></div>', wp_kses_post( $message ) );
+		}
+	);
+	return;
+}
+
+/*
+ * OpenSSL is a hard requirement: Bookora encrypts secrets (OAuth tokens, license
+ * keys, backups) at rest and never falls back to plaintext. Fail soft if absent.
+ */
+if ( ! function_exists( 'openssl_encrypt' ) ) {
+	add_action(
+		'admin_notices',
+		static function () {
+			$message = esc_html__( 'Bookora requires the OpenSSL PHP extension to encrypt stored secrets. The plugin has been halted.', 'bookora' );
+			printf( '<div class="notice notice-error"><p>%s</p></div>', esc_html( $message ) );
 		}
 	);
 	return;

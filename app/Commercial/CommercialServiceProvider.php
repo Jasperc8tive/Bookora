@@ -70,7 +70,11 @@ final class CommercialServiceProvider implements ServiceProvider {
 		);
 		$container->singleton(
 			BackupManager::class,
-			static fn ( Container $c ): BackupManager => new BackupManager( $c->get( DataPortability::class ), $c->get( ActivityLogger::class ) )
+			static fn ( Container $c ): BackupManager => new BackupManager(
+				$c->get( DataPortability::class ),
+				$c->get( ActivityLogger::class ),
+				$c->get( Crypto::class )
+			)
 		);
 
 		add_filter(

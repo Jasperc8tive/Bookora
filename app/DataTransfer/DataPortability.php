@@ -34,6 +34,34 @@ final class DataPortability {
 	 */
 	private const SKIP = array( 'migrations', 'activity_logs' );
 
+	/**
+	 * Canonical parents-first restore order. Tables not listed are appended
+	 * (and deleted first) so the order is always deterministic. Foreign-key
+	 * checks are suspended for the atomic restore block, but inserting parents
+	 * before children keeps the data valid even if a future change re-enables
+	 * checks mid-transaction.
+	 */
+	private const ORDER = array(
+		'service_categories',
+		'services',
+		'staff',
+		'customers',
+		'resources',
+		'memberships',
+		'coupons',
+		'gift_cards',
+		'staff_services',
+		'staff_availability',
+		'appointments',
+		'booking_holds',
+		'payments',
+		'notifications',
+		'notes',
+		'waitlist',
+		'customer_memberships',
+		'integrations',
+	);
+
 	private Schema $schema;
 	private Settings $settings;
 	private ActivityLogger $audit;
@@ -93,27 +121,72 @@ final class DataPortability {
 			return new WP_Error( 'bookora_import_empty', __( 'The export document contains no tables.', 'bookora' ), array( 'status' => 422 ) );
 		}
 
+		// Restrict the payload to tables we own, in a deterministic parents-first order.
 		$known   = $this->data_tables( true );
-		$results = array();
-
-		foreach ( $payload['tables'] as $table => $rows ) {
-			$table = (string) $table;
-			// Only restore tables we own and recognise — ignore anything else.
-			if ( ! in_array( $table, $known, true ) || ! is_array( $rows ) ) {
-				continue;
+		$targets = array();
+		foreach ( $this->ordered( $known ) as $table ) {
+			if ( isset( $payload['tables'][ $table ] ) && is_array( $payload['tables'][ $table ] ) ) {
+				$targets[ $table ] = $payload['tables'][ $table ];
 			}
+		}
 
+		// Atomic restore: suspend FK checks, wipe + reload inside one transaction,
+		// roll back on any failure so a botched import never leaves partial data.
+		$suppress = $this->wpdb->suppress_errors( true );
+		$this->wpdb->query( 'SET FOREIGN_KEY_CHECKS = 0' );
+		$this->wpdb->query( 'START TRANSACTION' );
+
+		$results = array();
+		$failure = null;
+
+		// Delete children → parents (reverse of insert order).
+		foreach ( array_reverse( array_keys( $targets ) ) as $table ) {
 			$name = $this->schema->table( $table );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.SchemaChange
-			$this->wpdb->query( "TRUNCATE TABLE `{$name}`" );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+			if ( false === $this->wpdb->query( "DELETE FROM `{$name}`" ) ) {
+				$failure = "delete:{$table}";
+				break;
+			}
+		}
 
-			$inserted = 0;
-			foreach ( $rows as $row ) {
-				if ( is_array( $row ) && false !== $this->wpdb->insert( $name, $row ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Insert parents → children, with schema-validated columns only.
+		if ( null === $failure ) {
+			foreach ( $targets as $table => $rows ) {
+				$name     = $this->schema->table( $table );
+				$columns  = $this->columns_for( $name );
+				$inserted = 0;
+				foreach ( $rows as $row ) {
+					if ( ! is_array( $row ) ) {
+						continue;
+					}
+					$clean = array_intersect_key( $row, $columns );
+					if ( array() === $clean ) {
+						continue;
+					}
+					if ( false === $this->wpdb->insert( $name, $clean ) ) { // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+						$failure = "insert:{$table}";
+						break 2;
+					}
 					++$inserted;
 				}
+				$results[ $table ] = $inserted;
 			}
-			$results[ $table ] = $inserted;
+		}
+
+		if ( null === $failure ) {
+			$this->wpdb->query( 'COMMIT' );
+		} else {
+			$this->wpdb->query( 'ROLLBACK' );
+		}
+		$this->wpdb->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+		$this->wpdb->suppress_errors( $suppress );
+
+		if ( null !== $failure ) {
+			return new WP_Error(
+				'bookora_import_failed',
+				__( 'Import failed and was rolled back; no data was changed.', 'bookora' ),
+				array( 'status' => 500 )
+			);
 		}
 
 		if ( $with_settings && isset( $payload['settings'] ) && is_array( $payload['settings'] ) ) {
@@ -123,6 +196,46 @@ final class DataPortability {
 		$this->audit->log( 'data.imported', array( 'tables' => array_keys( $results ) ) );
 
 		return $results;
+	}
+
+	/**
+	 * Order known tables parents-first per {@see self::ORDER}; unknown tables
+	 * are appended so the sequence is always deterministic.
+	 *
+	 * @param array<int, string> $known Discovered table names.
+	 * @return array<int, string>
+	 */
+	private function ordered( array $known ): array {
+		$ordered = array();
+		foreach ( self::ORDER as $table ) {
+			if ( in_array( $table, $known, true ) ) {
+				$ordered[] = $table;
+			}
+		}
+		foreach ( $known as $table ) {
+			if ( ! in_array( $table, $ordered, true ) ) {
+				$ordered[] = $table;
+			}
+		}
+
+		return $ordered;
+	}
+
+	/**
+	 * The set of real column names for a table, as a lookup map.
+	 *
+	 * @param string $name Prefixed table name.
+	 * @return array<string, true>
+	 */
+	private function columns_for( string $name ): array {
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$cols = $this->wpdb->get_col( "SHOW COLUMNS FROM `{$name}`" );
+		$map  = array();
+		foreach ( is_array( $cols ) ? $cols : array() as $col ) {
+			$map[ (string) $col ] = true;
+		}
+
+		return $map;
 	}
 
 	/**
