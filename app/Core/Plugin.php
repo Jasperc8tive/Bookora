@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Bookora\Core;
 
 use Bookora\Admin\AdminServiceProvider;
+use Bookora\Advanced\AdvancedServiceProvider;
 use Bookora\API\ApiServiceProvider;
 use Bookora\Core\Contracts\ServiceProvider;
 use Bookora\Database\DatabaseServiceProvider;
@@ -73,6 +74,7 @@ final class Plugin {
 		ElementorServiceProvider::class,
 		PortalServiceProvider::class,
 		ReportsServiceProvider::class,
+		AdvancedServiceProvider::class,
 		FrontendServiceProvider::class,
 		ApiServiceProvider::class,
 		AdminServiceProvider::class,

@@ -152,5 +152,14 @@ final class Menu {
 			self::SLUG . '-reports',
 			array( $this->dashboard, 'render' )
 		);
+
+		add_submenu_page(
+			self::SLUG,
+			__( 'Advanced', 'bookora' ),
+			__( 'Advanced', 'bookora' ),
+			Capabilities::MANAGE_SETTINGS,
+			self::SLUG . '-advanced',
+			array( $this->dashboard, 'render' )
+		);
 	}
 }

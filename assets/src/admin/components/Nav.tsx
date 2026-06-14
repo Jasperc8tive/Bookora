@@ -1,7 +1,7 @@
 /**
  * Top-level admin navigation between Bookora screens.
  */
-export type Screen = 'dashboard' | 'services' | 'staff' | 'customers' | 'calendar' | 'payments' | 'notifications' | 'integrations' | 'reports';
+export type Screen = 'dashboard' | 'services' | 'staff' | 'customers' | 'calendar' | 'payments' | 'notifications' | 'integrations' | 'reports' | 'advanced';
 
 const TABS: { id: Screen; label: string }[] = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -11,6 +11,7 @@ const TABS: { id: Screen; label: string }[] = [
   { id: 'customers', label: 'Customers' },
   { id: 'payments', label: 'Payments' },
   { id: 'reports', label: 'Reports' },
+  { id: 'advanced', label: 'Advanced' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'integrations', label: 'Integrations' },
 ];
