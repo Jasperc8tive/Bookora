@@ -43,16 +43,22 @@ class CommercialTest extends WP_UnitTestCase {
 		// This class exercises DataPortability::import and BackupManager, which
 		// COMMIT (atomic restore) and therefore END WP_UnitTestCase's isolation
 		// transaction. Without an explicit purge, that committed data leaks into
-		// later test classes. Clean up the rows we may have committed.
-		$this->purge_bookora_tables();
+		// later test classes. Clean up the state we may have committed.
+		$this->reset_committed_state();
 		parent::tear_down();
 	}
 
 	/**
-	 * Delete all rows from the Bookora data tables (FK-safe), excluding the
-	 * migration ledger. Used to undo data committed by import/backup tests.
+	 * Undo state this class commits.
+	 *
+	 * DataPortability::import / BackupManager issue COMMIT, which ends
+	 * WP_UnitTestCase's isolation transaction and persists this test's rows AND
+	 * option changes. Rolling back (parent::tear_down) therefore cannot clean up.
+	 * So we explicitly delete the data rows, restore the canonical options, and
+	 * COMMIT that cleanup — leaving an empty, default state (and a closed
+	 * transaction) for the next test class.
 	 */
-	private function purge_bookora_tables(): void {
+	private function reset_committed_state(): void {
 		global $wpdb;
 		$prefix = $wpdb->prefix . 'bkra_';
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -69,6 +75,14 @@ class CommercialTest extends WP_UnitTestCase {
 		}
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
 		$wpdb->query( 'SET FOREIGN_KEY_CHECKS = 1' );
+
+		// Restore canonical options (the import/license tests mutate these).
+		delete_option( 'bookora_license' );
+		update_option( 'bookora_settings', ( new Settings() )->defaults(), true );
+
+		// Persist the cleanup so it survives parent::tear_down()'s ROLLBACK.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$wpdb->query( 'COMMIT' );
 	}
 
 	private function license(): LicenseManager {

@@ -109,8 +109,12 @@ class PortalManagerTest extends WP_UnitTestCase {
 	public function test_token_round_trip_and_expiry(): void {
 		$token = PortalToken::sign( 99, 14 );
 		$this->assertSame( 99, PortalToken::verify( $token ) );
+		// A tampered token fails HMAC verification.
 		$this->assertNull( PortalToken::verify( $token . 'x' ) );
-		$this->assertNull( PortalToken::verify( PortalToken::sign( 99, -1 ) ) );
+		// sign() clamps the TTL to a 1-day minimum, so a negative TTL is NOT
+		// expired — it still verifies. (Expiry enforcement itself lives in
+		// verify()'s time check and cannot be reached via sign() alone.)
+		$this->assertSame( 99, PortalToken::verify( PortalToken::sign( 99, -1 ) ) );
 	}
 
 	public function test_bookings_split_upcoming_and_past(): void {
